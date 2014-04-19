@@ -12,8 +12,8 @@ function onOpen(e) {
 }
 
 function belittleWithMessages() {
-  setTimeout(function () {
-    wsocket.send('heyoo ' + Math.random());
+  setInterval(function () {
+    wsocket.send('heyoo ' + new Date().toISOString());
   }, 1000);
 }
 

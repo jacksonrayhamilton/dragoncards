@@ -1,7 +1,7 @@
 var wsocket;
 
 function connect() {
-  wsocket = new WebSocket("ws://localhost:8080/dragoncards/echo");
+  wsocket = new WebSocket("ws://localhost:8080/echo");
   wsocket.onopen = onOpen;
   wsocket.onmessage = onMessage;
 }

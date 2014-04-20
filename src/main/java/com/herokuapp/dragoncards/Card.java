@@ -24,4 +24,8 @@ public class Card {
     return level;
   }
 
+  public String toString() {
+    return String.format("%s - %d", this.element.toString(), this.level);
+  }
+
 }

@@ -1,7 +1,7 @@
 var wsocket;
 
 function connect() {
-  wsocket = new WebSocket("ws://localhost:8080/echo");
+  wsocket = new WebSocket('ws://' + location.host + '/echo');
   wsocket.onopen = onOpen;
   wsocket.onmessage = onMessage;
 }

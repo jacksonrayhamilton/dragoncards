@@ -1,0 +1,201 @@
+// Server-side: client is added to a collection.
+
+{
+  "toClient": "queryPlayerName"
+}
+
+// Client may respond with
+
+{
+  "toServer": "setPlayerName",
+  "name": "Billy Bo Jo" // or null
+}
+
+// Create a Player associated with the client and set its name
+// and give it a uuid.
+
+{
+  "toClient": "createPlayer",
+  "name": "Billy Bo Jo",
+  "uuid": "4444"
+}
+
+// Server-side move client to the lobby.
+// Client-side delegate player to lobby.
+
+{
+  "toClient": "movePlayerToLobby",
+  "userList": [
+    {
+      "name": "Billy Bo Jo",
+      "uuid": "4443" // an uuid
+    },
+    {}  // another user
+  ]
+}
+
+// Serverside: On interval, check if the lobby has changed in
+// size. If so, broadcast delta to all current players in lobby.
+
+{
+  "toClient": "updateLobby",
+  "usersJoined": [ { "name": "Jaime Lannister", "uuid": "6666" } ],
+  "usersLeft": [ "4443", "4442" ]
+}
+
+// Every minute or so sent a userList for a full refresh.
+
+// If a game starts, move players to room, record the change
+// temporarily in the lobby.
+
+// Users can click on a player they wish to fight. If so the
+// following is sent up:
+
+{
+  "toServer": "requestDuel",
+  "opponent": "6666" // uuid
+}
+
+// Server validates that the sender is in a lobby, and that the
+// opponent is also in a lobby.
+// Server sends the following to the requestee:
+
+{
+  "toClient": "duelRequested",
+  "opponent": "4444" // uuid of the requester
+}
+
+// Requestee may respond with either an accept or a decline.
+
+{
+  "toServer": "answerDuelRequest",
+  "accept": true // or false
+}
+
+// If false, the requester is notified and nothing happens.
+// If true, the game begins.
+// Server-side both players are moved from the lobby
+// into a new room. A Game is also instantiated.
+// The following is sent to each client:
+
+{
+  "toClient": "movePlayerToRoom",
+  "roomData": {
+    "id": "XXXX",
+    "opponent": "6666" // will be different for each player
+  },
+  "gameData": {
+    "turnPlayer": "6666", // randomly-chosen
+    "deck": {
+      "size": 63
+    },
+    "yourHand": {
+      "size": 6,
+      "cards": [
+        {
+          "attribute": "water",
+          "level": 4
+        },
+        {
+          "attribute": "fire",
+          "level": 3
+        },
+        {} // and many more cards
+      ]
+    },
+    "opponentHand": {
+      "size": 6,
+      "cards": null
+    },
+    "yourDiscardPile": [],
+    "opponentDiscardPile": [],
+    "yourDragons": [],
+    "opponentDragons": []
+  }
+}
+
+// Room goes in loop, alternating turns:
+
+// To client whose turn it is:
+
+{
+  "toClient": "queryCollectAction"
+}
+
+{
+  "toServer": "collectAction",
+  "action": "pilfer" // or simply just "draw", or "summon" if possible
+  "target": "opponent" // or "self", to determine which discard pile to pilfer
+}
+
+// Which the server relays to the other client.
+
+{
+  "toClient": "opponentCollectAction",
+  "action": "..."
+}
+
+// Deliver drawn cards to the player drawing.
+
+{
+  "toClient": "draw",
+  "card": {
+    "attribute": "water",
+    "level": 4
+  }
+}
+
+// Or if pilfering
+
+{
+  "toClient": "pilfer",
+  "card": {
+    "attribute": "fire",
+    "level": 2
+  }
+}
+
+// Or if summoning, the server checks that the player can summon,
+// and then relays to the opponent what was summoned.
+
+{
+  "toClient": "opponentSummon",
+  "cards": []
+}
+
+// Once that player has summoned the server will draw unlimited
+// cards until the losing player has a set made. If the deck
+// runs out first then he loses. Immediately after he gets his set,
+// then that player summons too. Same message is sent.
+// Then, enter battle state.
+
+// Battle is not turns-based. It is instanteous and based on
+// predictions. However switches and counters come before attacks.
+// You automatically attack the dragon in your current column.
+
+{
+  "toClient": "queryBattleActions"
+}
+
+{
+  "toServer": "battleActions",
+  "columns": {
+    "left": "attack",
+    "right": "switch"
+  }
+}
+
+// The clients wait while their attacks pend.
+// Once the server receives both, it determines the current state,
+// relays the opponent action and also if the game is over.
+// The client can infer the state of the game based on what happened.
+
+// Once the battle is over a victory message will be shown clientside.
+// Server-side the player is still in the room until an exit is sent.
+
+{
+  "toServer": "exitRoom"
+}
+
+// Once this message is received the server will send the user back to
+// to the lobby with a new list of players.

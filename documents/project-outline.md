@@ -2,7 +2,7 @@ Dragon Cards!
 
 Overview
 --------
-70 card shared deck
+75 card shared deck
 2 players
 2 discard piles
 6 cards to start
@@ -56,7 +56,7 @@ Client-side:
     - Discard piles visible.
   - Battle view.
     - All dragons visible.
-    - Attack / Defend / Counter options.
+    - Attack / Switch / Counter options.
     - Attack shows "cutscene" of dragons.
 - JSON messaging.
   - Initial match info, game and opponent id delivered via JSON.
@@ -135,3 +135,8 @@ Course of Action
 - Accumulate graphical assets.
 - Implement client side canvas display.
 - Cross-browser testing.
+
+JSON API
+--------
+
+See JSON-API.json.

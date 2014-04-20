@@ -33,6 +33,10 @@ public class Deck {
     return this.cards.isEmpty();
   }
 
+  public int size() {
+    return this.cards.size();
+  }
+
   public String toString() {
     StringBuilder stringBuilder = new StringBuilder();
     stringBuilder.append("[ \n");

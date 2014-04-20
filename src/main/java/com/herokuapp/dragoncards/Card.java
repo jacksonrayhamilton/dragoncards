@@ -1,19 +1,12 @@
 package com.herokuapp.dragoncards;
 
 public class Card {
-  private Element element;
-  private int level;
-  private double life;
-  private double boost;
+  protected final Element element;
+  protected final int level;
 
   public Card(Element element, int level) {
     this.element = element;
     this.level = level;
-  }
-
-  public void summon() {
-    this.life = Math.log(10 * 5) / Math.log(10) * 10;
-    this.boost = 0.0;
   }
 
   public Element getElement() {
@@ -26,6 +19,10 @@ public class Card {
 
   public String toString() {
     return String.format("%s - %d", this.element.toString(), this.level);
+  }
+
+  public boolean equals(Card other) {
+    return (this.element == other.getElement() && this.level == other.getLevel());
   }
 
 }

@@ -160,13 +160,13 @@
 
 {
   "toClient": "opponentSummon",
-  "cards": []
+  "dragons": []
 }
 
 // Once that player has summoned the server will draw unlimited
 // cards until the losing player has a set made. If the deck
 // runs out first then he loses. Immediately after he gets his set,
-// then that player summons too. Same message is sent.
+// then that player summons too. Same message as above is sent.
 // Then, enter battle state.
 
 // Battle is not turns-based. It is instanteous and based on

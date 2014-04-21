@@ -26,7 +26,7 @@ public class Game {
     public PlayerGameData() {
       this.hand = new Hand();
       this.discardPile = new DiscardPile();
-      this.dragons = new ArrayList<Dragon>();
+      this.dragons = null;
       this.readyToBattle = false;
       this.deaths = 0;
     }
@@ -95,6 +95,10 @@ public class Game {
     return this.playerGameData[player].deaths;
   }
 
+  public Deck getDeck() {
+    return this.deck;
+  }
+
   /**
    * Determines which player is the winner using special codes.
    * 
@@ -102,7 +106,7 @@ public class Game {
    *         the number of the player who won.
    */
   public int getWinner() {
-    if (this.deck.size() <= 0) {
+    if (this.deck.isEmpty()) {
       if (!this.isReadyToBattle(0) && !this.isReadyToBattle(1)) {
         return -2; // Tie.
       } else if (this.isReadyToBattle(0) && !this.isReadyToBattle(1)) {
@@ -112,7 +116,7 @@ public class Game {
       }
     }
 
-    if (!battleHasBegun) {
+    if (!this.battleHasBegun) {
       return -1; // No winner yet.
     }
 
@@ -155,18 +159,14 @@ public class Game {
     }
   }
 
-  /**
-   * This should be checked ahead-of-time, of course.
-   */
+  // The conditions for summoning should be checked ahead-of-time, of course.
   public void receiveSummonAction() {
     Hand hand = this.getHand(this.turnPlayer);
-    int handSize = hand.size();
     ArrayList<Dragon> summonedDragons = new ArrayList<>(2);
 
-    for (int i = 0; i < handSize; i++) {
+    for (int i = 0, handSize = hand.size(); i < handSize; i++) {
       Card card = hand.get(i);
-      if (summonedDragons.isEmpty() ||
-          !summonedDragons.contains(card)) {
+      if (summonedDragons.isEmpty() || !summonedDragons.contains(card)) {
         summonedDragons.add(new Dragon(card));
         if (summonedDragons.size() == DRAGONS_PER_PLAYER) {
           break;
@@ -182,8 +182,20 @@ public class Game {
 
   }
 
+  public void receiveDiscardAction(Card card) {
+    this.receiveDiscardAction(card.getElement(), card.getLevel());
+  }
+
   public void receiveDiscardAction(Element element, int level) {
     Card discardedCard = this.getHand(this.turnPlayer).discard(element, level);
     this.getDiscardPile(this.turnPlayer).add(discardedCard);
+  }
+
+  public void queryBattleActions() {
+
+  }
+
+  public void receiveBattleActions(BattleAction left, BattleAction right) {
+
   }
 }

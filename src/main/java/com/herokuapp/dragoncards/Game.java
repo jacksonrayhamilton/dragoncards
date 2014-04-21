@@ -195,7 +195,28 @@ public class Game {
 
   }
 
-  public void receiveBattleActions(BattleAction left, BattleAction right) {
+  public void attackWithDragon(int attacker, int target) {
+    // If being countered, take damage.
+    // Else inflict damage.
+  }
+
+  public void switchDragons() {
+    List<Dragon> dragons = this.getDragons(this.turnPlayer);
+    dragons.add(dragons.remove(0));
+  }
+
+  public void counterWithDragon(int dragon) {
+    // Enable countering state.
+  }
+
+  public void battle() {
 
   }
+
+  public void receiveBattleActions(BattleAction left, BattleAction right) {
+    // Add actions to queue.
+    // Externally check if queue has receached its capacity; if so
+    // then begin battle.
+  }
+
 }

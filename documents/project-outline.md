@@ -42,6 +42,19 @@ Battling
   ready and then performs combat.
 - Dragons have life. When their life is reduced to 0, the dragon dies. Once both
   dragons die that player loses.
+- You can either attack, switch or counter with each dragon.
+- Attacking
+  - If being countered by attack target, inflict damage to self.
+  - Else inflict damage to attack target.
+- Switch
+  - Indices of both of a player's dragons are swapped to affect incoming attacks.
+  - Has priority.
+- Counter
+  - Sets the counterer into a countering state in which an attack will be negated
+  and damage will be inflicted onto the attacker.
+  - Has priority.
+
+
 
 Project Organization
 --------------------

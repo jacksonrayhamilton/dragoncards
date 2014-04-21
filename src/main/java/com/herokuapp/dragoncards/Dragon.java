@@ -66,11 +66,14 @@ public class Dragon extends Card {
   }
 
   public String toString() {
+    String life = String.format("%.3f", this.life);
+    String maxLife = String.format("%.3f", this.maxLife);
+    String power = String.format("%.3f", this.power);
     return "Dragon: {\n"
         + "  element: " + this.element + "\n"
         + "  level: " + this.level + "\n"
-        + "  life: " + this.life + "/" + this.maxLife + "\n"
-        + "  power: " + this.power + "\n"
+        + "  life: " + life + "/" + maxLife + "\n"
+        + "  power: " + power + "\n"
         + "  boost: " + this.boost + "\n"
         + "}";
   }

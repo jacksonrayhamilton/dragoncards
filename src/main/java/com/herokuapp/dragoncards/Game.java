@@ -21,19 +21,16 @@ public class Game {
     public DiscardPile discardPile;
     public List<Dragon> dragons;
     public boolean readyToBattle;
-    public int deaths;
-    public List<BattleAction> battleActions;
 
     public PlayerGameData() {
       this.hand = new Hand();
       this.discardPile = new DiscardPile();
       this.readyToBattle = false;
-      this.deaths = 0;
     }
   }
 
-  private static final int DRAGONS_PER_PLAYER = 2;
-  private static final int HAND_SIZE_LIMIT = 6;
+  public static final int DRAGONS_PER_PLAYER = 2;
+  public static final int HAND_SIZE_LIMIT = 6;
 
   private Player[] players;
   private int playerCount;
@@ -41,6 +38,8 @@ public class Game {
   private Deck deck;
   private int turnPlayer;
   private boolean battleHasBegun;
+
+  private List<BattleAction> battleActions;
 
   public Game(Player... players) {
     this.players = players;
@@ -52,6 +51,7 @@ public class Game {
     }
 
     this.battleHasBegun = false;
+    this.battleActions = new ArrayList<>();
     this.deck = new Deck();
     this.turnPlayer = 0; // Should probably be set by
                          // RandomNumberGenerator.inclusiveRange(0,
@@ -89,19 +89,30 @@ public class Game {
   }
 
   public int getDeaths(int player) {
-    return this.playerGameData[player].deaths;
+    List<Dragon> dragons = this.getDragons(player);
+    int deaths = 0;
+    for (Dragon dragon : dragons) {
+      if (dragon.isDead()) {
+        deaths++;
+      }
+    }
+    return deaths;
   }
 
-  public List<BattleAction> getBattleActions(int player) {
-    return this.playerGameData[player].battleActions;
+  public List<BattleAction> getBattleActions() {
+    return this.battleActions;
   }
 
-  public void setBattleActions(int player, List<BattleAction> actions) {
-    this.playerGameData[player].battleActions = actions;
+  public void addBattleActions(List<BattleAction> actions) {
+    this.battleActions.addAll(actions);
   }
 
   public Deck getDeck() {
     return this.deck;
+  }
+
+  public int getTurnPlayer() {
+    return this.turnPlayer;
   }
 
   /**
@@ -126,10 +137,10 @@ public class Game {
     }
 
     // Battle must have begun to reach the following code.
-    boolean[] deadPlayers = new boolean[this.players.length]; // default false
-    for (int i = 0, length = this.players.length; i < length; i++) {
-      if (this.getDeaths(i) == DRAGONS_PER_PLAYER) {
-        deadPlayers[i] = true;
+    boolean[] deadPlayers = new boolean[this.playerCount]; // default false
+    for (int player = 0; player < this.playerCount; player++) {
+      if (this.getDeaths(player) == DRAGONS_PER_PLAYER) {
+        deadPlayers[player] = true;
       }
     }
 
@@ -196,13 +207,19 @@ public class Game {
     this.getDiscardPile(this.turnPlayer).add(discardedCard);
   }
 
+  // TODO: Maybe should be some hook to call this automatically once both
+  // players can summon.
+  public void beginBattle() {
+    this.battleHasBegun = true;
+  }
+
   public void queryBattleActions() {
 
   }
 
-  public void attackWithDragon(int attacker, int target) {
-    Dragon attackingDragon = this.getDragons(this.turnPlayer).get(attacker);
-    int otherPlayer = this.turnPlayer == 0 ? 1 : 0;
+  public void attackWithDragon(int player, int attacker, int target) {
+    Dragon attackingDragon = this.getDragons(player).get(attacker);
+    int otherPlayer = player == 0 ? 1 : 0;
     Dragon targetDragon = this.getDragons(otherPlayer).get(target);
 
     if (targetDragon.isCountering()) {
@@ -214,43 +231,42 @@ public class Game {
     }
   }
 
-  public void switchDragons() {
-    List<Dragon> dragons = this.getDragons(this.turnPlayer);
+  public void switchDragons(int player) {
+    List<Dragon> dragons = this.getDragons(player);
     dragons.add(dragons.remove(0));
   }
 
-  public void counterWithDragon(int dragon) {
-    this.getDragons(this.turnPlayer).get(dragon).startCountering();
+  public void counterWithDragon(int player, int dragon) {
+    this.getDragons(player).get(dragon).startCountering();
   }
 
   public void battle() {
 
-    ArrayList<BattleAction> actions = new ArrayList<>();
+    ArrayList<BattleAction> sortedActions = new ArrayList<>();
 
     // Sort the actions.
-    for (int i = 0; i < this.playerCount; i++) {
-      for (BattleAction action : this.getBattleActions(i)) {
-        // Add prioritized actions to the front.
-        if (action.getType() == BattleAction.SWITCH ||
-            action.getType() == BattleAction.COUNTER) {
-          actions.add(0, action);
-        } else {
-          actions.add(action);
-        }
+    for (BattleAction action : this.getBattleActions()) {
+      // Add prioritized actions to the front.
+      if (action.getType() == BattleAction.SWITCH ||
+          action.getType() == BattleAction.COUNTER) {
+        sortedActions.add(0, action);
+      } else {
+        sortedActions.add(action);
       }
     }
 
     // Execute all the actions.
-    for (BattleAction action : actions) {
+    for (BattleAction action : sortedActions) {
       switch (action.getType()) {
         case BattleAction.ATTACK:
-          this.attackWithDragon(action.getInitiator(), action.getTarget());
+          this.attackWithDragon(action.getPlayer(), action.getInitiator(),
+              action.getTarget());
           break;
         case BattleAction.SWITCH:
-          this.switchDragons();
+          this.switchDragons(action.getPlayer());
           break;
         case BattleAction.COUNTER:
-          this.counterWithDragon(action.getInitiator());
+          this.counterWithDragon(action.getPlayer(), action.getInitiator());
           break;
         default:
           break;
@@ -261,15 +277,20 @@ public class Game {
   }
 
   public void battleCleanup() {
-    for (int i = 0; i < this.playerCount; i++) {
-      for (Dragon dragon : this.getDragons(i)) {
+    for (int player = 0; player < this.playerCount; player++) {
+      for (Dragon dragon : this.getDragons(player)) {
         dragon.stopCountering();
       }
     }
+    this.battleActions.clear();
   }
 
   public void receiveBattleActions(List<BattleAction> actions) {
-    this.setBattleActions(this.turnPlayer, actions);
+    this.addBattleActions(actions);
+  }
+
+  public int getPlayerCount() {
+    return this.playerCount;
   }
 
 }

@@ -13,25 +13,31 @@ public class BattleAction {
       COUNTER = "COUNTER";
 
   private String type;
+  private int player;
   private int initiator;
   private int target;
 
-  public BattleAction(String type, int initiator, int target) {
+  public BattleAction(String type, int player, int initiator, int target) {
     this.type = type;
+    this.player = player;
     this.initiator = initiator;
     this.target = target;
   }
 
   public String getType() {
-    return type;
+    return this.type;
+  }
+
+  public int getPlayer() {
+    return this.player;
   }
 
   public int getInitiator() {
-    return initiator;
+    return this.initiator;
   }
 
   public int getTarget() {
-    return target;
+    return this.target;
   }
 
 }

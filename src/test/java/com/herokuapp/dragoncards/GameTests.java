@@ -3,6 +3,9 @@ package com.herokuapp.dragoncards;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -94,17 +97,11 @@ public class GameTests {
     assertEquals(0, deck.size());
   }
 
-  private void setupHandForSummoning(int player) {
-    int otherPlayer = player == 0 ? 1 : 0;
+  private void setupHandForSummoning() {
+    int otherPlayer = this.game.getTurnPlayer() == 0 ? 1 : 0;
     Hand otherHand = this.game.getHand(otherPlayer);
     DiscardPile otherDiscardPile = this.game.getDiscardPile(otherPlayer);
     Deck deck = this.game.getDeck();
-
-    if (player == 1) {
-      // Begin with player 1's turn.
-      this.game.nextTurn();
-    }
-    // Else begin with player 0's turn.
 
     // Draw whole deck.
     while (!deck.isEmpty()) {
@@ -130,10 +127,11 @@ public class GameTests {
   @Test
   public void Summon_SufficientCardsInHand_Summoned() {
     for (int i = 0; i < 2; i++) {
-      this.setupHandForSummoning(i);
+      this.setupHandForSummoning();
       this.game.receiveSummonAction();
       assertTrue(this.game.isReadyToBattle(i));
       assertEquals(2, this.game.getDragons(i).size());
+      this.game.nextTurn();
     }
   }
 
@@ -141,10 +139,10 @@ public class GameTests {
   public void GettingWinner_DifferentWinners_CorrectCode() {
     assertEquals(-1, this.game.getWinner());
 
-    this.setupHandForSummoning(0); // Deck is empty now.
-    this.setupHandForSummoning(1);
-    this.game.nextTurn(); // Setup left it as player 1's turn so make it player
-                          // 0's instead.
+    this.setupHandForSummoning(); // Deck is empty now.
+    this.game.nextTurn(); // Player 1's turn.
+    this.setupHandForSummoning();
+    this.game.nextTurn(); // Player 0's turn.
 
     assertEquals(-2, this.game.getWinner()); // Tied since deck is empty.
 
@@ -155,5 +153,43 @@ public class GameTests {
     this.game.receiveSummonAction(); // For player 1.
 
     assertEquals(-1, this.game.getWinner());
+  }
+
+  @Test
+  public void Battling_DifferentCards_PlayerWins() {
+    this.setupHandForSummoning();
+    this.game.receiveSummonAction();
+    this.game.nextTurn(); // Player 1's turn.
+    this.setupHandForSummoning();
+    this.game.receiveSummonAction();
+    this.game.nextTurn(); // Player 0's turn.
+
+    this.game.beginBattle();
+
+    int count = 0;
+    while (this.game.getWinner() == -1 && count++ < 1000) {
+      List<BattleAction> actions = new ArrayList<>();
+
+      int[] targets = new int[] {
+          this.game.getDragons(1).get(0).isDead() == true ? 1 : 0,
+          this.game.getDragons(0).get(0).isDead() == true ? 1 : 0
+      };
+
+      for (int player = 0; player < this.game.getPlayerCount(); player++) {
+        for (int dragon = 0; dragon < Game.DRAGONS_PER_PLAYER; dragon++) {
+          if (!this.game.getDragons(player).get(dragon).isDead()) {
+            actions.add(new BattleAction("ATTACK", player, dragon,
+                targets[player]));
+          }
+        }
+      }
+
+      this.game.receiveBattleActions(actions);
+      this.game.battle();
+    }
+
+    System.out.println(this.game.getWinner() + " wins after " + count);
+    System.out.println(this.game.getDragons(0));
+    System.out.println(this.game.getDragons(1));
   }
 }

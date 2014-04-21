@@ -22,11 +22,11 @@ public class Game {
     public List<Dragon> dragons;
     public boolean readyToBattle;
     public int deaths;
+    public List<BattleAction> battleActions;
 
     public PlayerGameData() {
       this.hand = new Hand();
       this.discardPile = new DiscardPile();
-      this.dragons = null;
       this.readyToBattle = false;
       this.deaths = 0;
     }
@@ -41,9 +41,6 @@ public class Game {
   private Deck deck;
   private int turnPlayer;
   private boolean battleHasBegun;
-
-  private ArrayList<Object> messages; // TODO: Find better types.
-  private ArrayList<Object> attacks;
 
   public Game(Player... players) {
     this.players = players;
@@ -93,6 +90,14 @@ public class Game {
 
   public int getDeaths(int player) {
     return this.playerGameData[player].deaths;
+  }
+
+  public List<BattleAction> getBattleActions(int player) {
+    return this.playerGameData[player].battleActions;
+  }
+
+  public void setBattleActions(int player, List<BattleAction> actions) {
+    this.playerGameData[player].battleActions = actions;
   }
 
   public Deck getDeck() {
@@ -196,8 +201,17 @@ public class Game {
   }
 
   public void attackWithDragon(int attacker, int target) {
-    // If being countered, take damage.
-    // Else inflict damage.
+    Dragon attackingDragon = this.getDragons(this.turnPlayer).get(attacker);
+    int otherPlayer = this.turnPlayer == 0 ? 1 : 0;
+    Dragon targetDragon = this.getDragons(otherPlayer).get(target);
+
+    if (targetDragon.isCountering()) {
+      double damage = targetDragon.getDamage();
+      attackingDragon.takeDamage(targetDragon.getElement(), damage);
+    } else {
+      double damage = attackingDragon.getDamage();
+      targetDragon.takeDamage(attackingDragon.getElement(), damage);
+    }
   }
 
   public void switchDragons() {
@@ -206,17 +220,56 @@ public class Game {
   }
 
   public void counterWithDragon(int dragon) {
-    // Enable countering state.
+    this.getDragons(this.turnPlayer).get(dragon).startCountering();
   }
 
   public void battle() {
 
+    ArrayList<BattleAction> actions = new ArrayList<>();
+
+    // Sort the actions.
+    for (int i = 0; i < this.playerCount; i++) {
+      for (BattleAction action : this.getBattleActions(i)) {
+        // Add prioritized actions to the front.
+        if (action.getType() == BattleAction.SWITCH ||
+            action.getType() == BattleAction.COUNTER) {
+          actions.add(0, action);
+        } else {
+          actions.add(action);
+        }
+      }
+    }
+
+    // Execute all the actions.
+    for (BattleAction action : actions) {
+      switch (action.getType()) {
+        case BattleAction.ATTACK:
+          this.attackWithDragon(action.getInitiator(), action.getTarget());
+          break;
+        case BattleAction.SWITCH:
+          this.switchDragons();
+          break;
+        case BattleAction.COUNTER:
+          this.counterWithDragon(action.getInitiator());
+          break;
+        default:
+          break;
+      }
+    }
+
+    this.battleCleanup();
   }
 
-  public void receiveBattleActions(BattleAction left, BattleAction right) {
-    // Add actions to queue.
-    // Externally check if queue has receached its capacity; if so
-    // then begin battle.
+  public void battleCleanup() {
+    for (int i = 0; i < this.playerCount; i++) {
+      for (Dragon dragon : this.getDragons(i)) {
+        dragon.stopCountering();
+      }
+    }
+  }
+
+  public void receiveBattleActions(List<BattleAction> actions) {
+    this.setBattleActions(this.turnPlayer, actions);
   }
 
 }

@@ -56,35 +56,42 @@ public class Game {
 
     this.battleHasBegun = false;
     this.deck = new Deck();
-    this.turnPlayer =
-        RandomNumberGenerator.inclusiveRange(0, this.players.length - 1);
+    this.turnPlayer = 0; // Should probably be set by
+                         // RandomNumberGenerator.inclusiveRange(0,
+                         // this.players.length - 1);
+
+    // Each player draws 6 cards.
+    for (int i = 0; i < HAND_SIZE_LIMIT * this.playerCount; i++) {
+      Card card = this.deck.draw();
+      this.getHand(i / 6).add(card);
+    }
   }
 
-  private Hand getHand(int player) {
+  public Hand getHand(int player) {
     return this.playerGameData[player].hand;
   }
 
-  private DiscardPile getDiscardPile(int player) {
+  public DiscardPile getDiscardPile(int player) {
     return this.playerGameData[player].discardPile;
   }
 
-  private List<Dragon> getDragons(int player) {
+  public List<Dragon> getDragons(int player) {
     return this.playerGameData[player].dragons;
   }
 
-  private void setDragons(int player, List<Dragon> dragons) {
+  public void setDragons(int player, List<Dragon> dragons) {
     this.playerGameData[player].dragons = dragons;
   }
 
-  private boolean isReadyToBattle(int player) {
+  public boolean isReadyToBattle(int player) {
     return this.playerGameData[player].readyToBattle;
   }
 
-  private void makeReadyToBattle(int player) {
+  public void makeReadyToBattle(int player) {
     this.playerGameData[player].readyToBattle = true;
   }
 
-  private int getDeaths(int player) {
+  public int getDeaths(int player) {
     return this.playerGameData[player].deaths;
   }
 
@@ -128,7 +135,11 @@ public class Game {
     return -1; // No winner yet.
   }
 
-  private Card pilfer(int player) {
+  public void nextTurn() {
+    this.turnPlayer = this.turnPlayer == 0 ? 1 : 0;
+  }
+
+  public Card pilfer(int player) {
     return this.getDiscardPile(player).collectTop();
   }
 
@@ -173,6 +184,6 @@ public class Game {
 
   public void receiveDiscardAction(Element element, int level) {
     Card discardedCard = this.getHand(this.turnPlayer).discard(element, level);
-    this.getDiscardPile(this.turnPlayer).receiveDiscardedCard(discardedCard);
+    this.getDiscardPile(this.turnPlayer).add(discardedCard);
   }
 }

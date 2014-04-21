@@ -3,9 +3,16 @@ package com.herokuapp.dragoncards;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class Deck {
-  private ArrayList<Card> cards;
+/**
+ * Container of all yet-undrawn cards in the game.
+ * 
+ * @author Jackson Hamilton
+ */
+public class Deck extends CardCollection {
 
+  /**
+   * Constructs a pre-shuffled deck of cards.
+   */
   public Deck() {
     Card[] array = new Card[75];
     for (int i = 0; i < 75; i++) {
@@ -25,27 +32,14 @@ public class Deck {
     this.cards = new ArrayList<Card>(Arrays.asList(array));
   }
 
+  /**
+   * Removes a card from the top of the deck.
+   * 
+   * @return The top card of the deck (no longer the top after this method has
+   *         executed.
+   */
   public Card draw() {
     return this.cards.remove(this.cards.size() - 1);
   }
 
-  public boolean isEmpty() {
-    return this.cards.isEmpty();
-  }
-
-  public int size() {
-    return this.cards.size();
-  }
-
-  public String toString() {
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.append("[ \n");
-    for (Card card : this.cards) {
-      stringBuilder.append("  ");
-      stringBuilder.append(card);
-      stringBuilder.append("\n");
-    }
-    stringBuilder.append("]");
-    return stringBuilder.toString();
-  }
 }

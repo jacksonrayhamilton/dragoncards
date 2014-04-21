@@ -1,5 +1,10 @@
 package com.herokuapp.dragoncards;
 
+/**
+ * A card representing an elemental dragon.
+ * 
+ * @author Jackson Hamilton
+ */
 public class Card {
   protected final Element element;
   protected final int level;
@@ -18,7 +23,10 @@ public class Card {
   }
 
   public String toString() {
-    return String.format("%s - %d", this.element.toString(), this.level);
+    return "Card: {\n"
+        + "  element: " + this.element + "\n"
+        + "  level: " + this.level + "\n"
+        + "}";
   }
 
   public boolean equals(Card other) {

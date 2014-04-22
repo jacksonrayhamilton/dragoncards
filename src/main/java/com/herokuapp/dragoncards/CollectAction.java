@@ -6,6 +6,6 @@ package com.herokuapp.dragoncards;
  * 
  * @author Jackson Hamilton
  */
-public enum CollectAction {
+public enum CollectAction implements PreliminaryAction {
   DRAW, PILFER
 }

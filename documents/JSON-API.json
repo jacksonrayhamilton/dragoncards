@@ -28,7 +28,7 @@
   "userList": [
     {
       "name": "Billy Bo Jo",
-      "uuid": "4443" // an uuid
+      "uuid": "4443" // a uuid
     },
     {}  // another user
   ]
@@ -62,7 +62,8 @@
 
 {
   "toClient": "duelRequested",
-  "opponent": "4444" // uuid of the requester
+  "opponent": "4444" // uuid of the requester.
+  // Actually may want to send down some data on the user too.
 }
 
 // Requestee may respond with either an accept or a decline.
@@ -119,11 +120,11 @@
 // To client whose turn it is:
 
 {
-  "toClient": "queryCollectAction"
+  "toClient": "queryPreliminaryAction"
 }
 
 {
-  "toServer": "collectAction",
+  "toServer": "preliminaryAction",
   "action": "pilfer" // or simply just "draw", or "summon" if possible
   "target": "opponent" // or "self", to determine which discard pile to pilfer
 }
@@ -131,8 +132,8 @@
 // Which the server relays to the other client.
 
 {
-  "toClient": "opponentCollectAction",
-  "action": "..."
+  "toClient": "opponentPilfer", // or opponentDraw
+  "target": 0 // if pilfering the target discard pile
 }
 
 // Deliver drawn cards to the player drawing.
@@ -169,9 +170,8 @@
 // then that player summons too. Same message as above is sent.
 // Then, enter battle state.
 
-// Battle is not turns-based. It is instanteous and based on
+// Battle is not turns-based. It is instantaneous and based on
 // predictions. However switches and counters come before attacks.
-// You automatically attack the dragon in your current column.
 
 {
   "toClient": "queryBattleActions"
@@ -179,10 +179,15 @@
 
 {
   "toServer": "battleActions",
-  "columns": {
-    "left": "attack",
-    "right": "switch"
-  }
+  "actions": [
+    {
+      "type": "attack",
+      "player": 0, // FISHY: Gotta check this. Shouldn't be user-set.
+      "initiator": 0 // or 1.
+      "target": 0 // or 1.
+    },
+    {} // Another action.
+  ]
 }
 
 // The clients wait while their attacks pend.

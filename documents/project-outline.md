@@ -153,3 +153,13 @@ JSON API
 --------
 
 See JSON-API.json.
+
+
+Sprites
+-------
+
+Water Dragon: brute.png
+Metal Dragon: metal-circles.png
+Wood Dragon: tree.png
+Fire Dragon: awesome-dragons.png, awesomest light one
+Earth Dragon: wilder.png

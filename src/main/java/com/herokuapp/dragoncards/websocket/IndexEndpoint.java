@@ -12,6 +12,8 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import com.herokuapp.dragoncards.Player;
+import com.herokuapp.dragoncards.State;
 import com.herokuapp.dragoncards.decoders.MessageDecoder;
 import com.herokuapp.dragoncards.encoders.CreatePlayerMessageEncoder;
 import com.herokuapp.dragoncards.encoders.DrawMessageEncoder;
@@ -25,6 +27,10 @@ import com.herokuapp.dragoncards.encoders.QueryBattleActionsMessageEncoder;
 import com.herokuapp.dragoncards.encoders.QueryPlayerNameMessageEncoder;
 import com.herokuapp.dragoncards.encoders.QueryPreliminaryActionMessageEncoder;
 import com.herokuapp.dragoncards.encoders.UpdateLobbyMessageEncoder;
+import com.herokuapp.dragoncards.messages.Message;
+import com.herokuapp.dragoncards.messages.client.SetPlayerNameMessage;
+import com.herokuapp.dragoncards.messages.server.CreatePlayerMessage;
+import com.herokuapp.dragoncards.messages.server.QueryPlayerNameMessage;
 
 @ServerEndpoint(
     value = "/index",
@@ -51,14 +57,31 @@ public class IndexEndpoint {
   static Queue<Session> queue = new ConcurrentLinkedQueue<>();
 
   @OnMessage
-  public void onMessage(Session session, String msg) {
-    session.getAsyncRemote().sendText(msg);
+  public void onMessage(Session session, Message message) {
+    if (message instanceof SetPlayerNameMessage) {
+
+      // Prevent second attempts at player creation.
+      if (session.getUserProperties().get("player") != null) {
+        return;
+      }
+
+      // Create a player to associate with the current user.
+      Player player =
+          new Player(((SetPlayerNameMessage) message).name, State.IN_LOBBY);
+      session.getUserProperties().put("player", player);
+
+      // Alert the client of the player created.
+      session.getAsyncRemote().sendObject(new CreatePlayerMessage(player));
+    }
   }
 
   @OnOpen
   public void openConnection(Session session) {
     queue.add(session);
     logger.log(Level.INFO, "Connection opened.");
+
+    // Ask the player for his name.
+    session.getAsyncRemote().sendObject(new QueryPlayerNameMessage());
   }
 
   @OnClose

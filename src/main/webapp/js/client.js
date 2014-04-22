@@ -1,24 +1,21 @@
-var wsocket;
+var ws;
 
 function connect() {
-  wsocket = new WebSocket('ws://' + location.host + '/echo');
-  wsocket.onopen = onOpen;
-  wsocket.onmessage = onMessage;
+  ws = new WebSocket('ws://' + location.host + '/index');
+  ws.onopen = onOpen;
+  ws.onmessage = onMessage;
 }
 
 function onOpen(e) {
-  wsocket.send('hey wazzup');
-  belittleWithMessages();
-}
-
-function belittleWithMessages() {
-  setInterval(function () {
-    wsocket.send('heyoo ' + new Date().toISOString());
-  }, 1000);
+  //ws.send('hey wazzup');
 }
 
 function onMessage(e) {
-  console.log(e);
+  console.log(e.message);
+}
+
+function sendMessage(obj) {
+  ws.send(JSON.stringify(obj));
 }
 
 window.addEventListener("load", connect, false);

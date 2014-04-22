@@ -40,4 +40,8 @@ public class Player implements JsonSerializable {
   public String getUuid() {
     return this.uuid;
   }
+
+  public String getName() {
+    return this.name;
+  }
 }

@@ -11,7 +11,7 @@ function onOpen(e) {
 }
 
 function onMessage(e) {
-  console.log(e.message);
+  console.log(JSON.parse(e.data));
 }
 
 function sendMessage(obj) {

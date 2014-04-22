@@ -32,6 +32,14 @@ public class Dragon extends Card {
     this(card.getElement(), card.getLevel());
   }
 
+  public double getMaxLife() {
+    return this.maxLife;
+  }
+
+  public double getLife() {
+    return this.life;
+  }
+
   public double getDamage() {
     return this.power * this.boost;
   }

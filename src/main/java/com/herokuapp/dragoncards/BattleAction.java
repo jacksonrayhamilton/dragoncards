@@ -17,10 +17,14 @@ public class BattleAction {
   private int initiator;
   private int target;
 
-  public BattleAction(String type, int player, int initiator, int target) {
+  public BattleAction(String type, int player, int initiator) {
     this.type = type;
     this.player = player;
     this.initiator = initiator;
+  }
+
+  public BattleAction(String type, int player, int initiator, int target) {
+    this(type, player, initiator);
     this.target = target;
   }
 

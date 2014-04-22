@@ -155,16 +155,19 @@ public class GameTests {
     assertEquals(-1, this.game.getWinner());
   }
 
-  @Test
-  public void Battling_DifferentCards_PlayerWins() {
+  private void setupForBattling() {
     this.setupHandForSummoning();
     this.game.receiveSummonAction();
     this.game.nextTurn(); // Player 1's turn.
     this.setupHandForSummoning();
     this.game.receiveSummonAction();
     this.game.nextTurn(); // Player 0's turn.
-
     this.game.beginBattle();
+  }
+
+  @Test
+  public void Battling_Attacking_PlayerWins() {
+    this.setupForBattling();
 
     int count = 0;
     while (this.game.getWinner() == -1 && count++ < 1000) {
@@ -188,8 +191,37 @@ public class GameTests {
       this.game.battle();
     }
 
-    System.out.println(this.game.getWinner() + " wins after " + count);
-    System.out.println(this.game.getDragons(0));
-    System.out.println(this.game.getDragons(1));
+    assertTrue(this.game.getWinner() != -1);
+  }
+
+  @Test
+  public void Battling_Countering_AttackerTakesDamage() {
+    this.setupForBattling();
+    List<BattleAction> actions = new ArrayList<>();
+    actions.add(new BattleAction("ATTACK", 0, 0, 0));
+    actions.add(new BattleAction("COUNTER", 1, 0));
+    this.game.receiveBattleActions(actions);
+    this.game.battle();
+    Dragon counteredDragon = this.game.getDragons(0).get(0);
+    assertTrue(counteredDragon.getLife() < counteredDragon.getMaxLife());
+  }
+
+  @Test
+  public void Battling_Switching_SwitchedTakesDamage() {
+    this.setupForBattling();
+    List<BattleAction> actions = new ArrayList<>();
+    actions.add(new BattleAction("ATTACK", 0, 0, 0));
+    actions.add(new BattleAction("SWITCH", 1, 0));
+    Dragon undamagedDragon = this.game.getDragons(1).get(0); // Apparently the
+                                                             // target of the
+                                                             // attack but he
+                                                             // will swap.
+    Dragon damagedDragon = this.game.getDragons(1).get(1); // Dragon 1 will move
+                                                           // to spot 0 and thus
+                                                           // take the damage.
+    this.game.receiveBattleActions(actions);
+    this.game.battle();
+    assertTrue(undamagedDragon.getLife() == undamagedDragon.getMaxLife());
+    assertTrue(damagedDragon.getLife() < damagedDragon.getMaxLife());
   }
 }

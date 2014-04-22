@@ -1,4 +1,4 @@
-package com.herokuapp.dragoncards;
+package com.herokuapp.dragoncards.game;
 
 /**
  * A dragon which a player can battle with. A dragons is synonymous with the

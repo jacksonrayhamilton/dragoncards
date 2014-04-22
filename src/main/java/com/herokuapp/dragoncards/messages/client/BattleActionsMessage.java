@@ -6,7 +6,7 @@ import java.util.List;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
-import com.herokuapp.dragoncards.BattleAction;
+import com.herokuapp.dragoncards.game.BattleAction;
 import com.herokuapp.dragoncards.messages.Message;
 
 public class BattleActionsMessage extends Message {

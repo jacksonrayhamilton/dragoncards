@@ -7,6 +7,10 @@ import java.util.Map.Entry;
 
 import org.junit.Test;
 
+import com.herokuapp.dragoncards.game.Card;
+import com.herokuapp.dragoncards.game.Deck;
+import com.herokuapp.dragoncards.game.Element;
+
 public class DeckTests {
 
   /**

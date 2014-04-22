@@ -9,6 +9,15 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.herokuapp.dragoncards.game.BattleAction;
+import com.herokuapp.dragoncards.game.Card;
+import com.herokuapp.dragoncards.game.CollectAction;
+import com.herokuapp.dragoncards.game.Deck;
+import com.herokuapp.dragoncards.game.DiscardPile;
+import com.herokuapp.dragoncards.game.Dragon;
+import com.herokuapp.dragoncards.game.Game;
+import com.herokuapp.dragoncards.game.Hand;
+
 public class GameTests {
 
   private Player a;

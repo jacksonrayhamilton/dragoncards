@@ -1,4 +1,4 @@
-package com.herokuapp.dragoncards;
+package com.herokuapp.dragoncards.game;
 
 public interface PreliminaryAction {
 

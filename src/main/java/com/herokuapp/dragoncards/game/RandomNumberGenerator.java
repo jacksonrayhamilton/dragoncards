@@ -1,4 +1,4 @@
-package com.herokuapp.dragoncards;
+package com.herokuapp.dragoncards.game;
 
 import java.util.Random;
 

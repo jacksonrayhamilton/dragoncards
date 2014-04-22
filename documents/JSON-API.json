@@ -25,7 +25,7 @@
 
 {
   "toClient": "movePlayerToLobby",
-  "userList": [
+  "players": [
     {
       "name": "Billy Bo Jo",
       "uuid": "4443" // a uuid
@@ -39,8 +39,8 @@
 
 {
   "toClient": "updateLobby",
-  "usersJoined": [ { "name": "Jaime Lannister", "uuid": "6666" } ],
-  "usersLeft": [ "4443", "4442" ]
+  "playersJoined": [ { "name": "Jaime Lannister", "uuid": "6666" } ],
+  "playersLeft": [ "4443", "4442" ]
 }
 
 // Every minute or so sent a userList for a full refresh.
@@ -146,8 +146,10 @@
   }
 }
 
-// Or if pilfering
+// Or if pilfering, you don't need to send a message, the client
+// already knows what to get.
 
+// NOT NEEDED
 {
   "toClient": "pilfer",
   "card": {
@@ -155,6 +157,7 @@
     "level": 2
   }
 }
+// NOT NEEDED
 
 // Or if summoning, the server checks that the player can summon,
 // and then relays to the opponent what was summoned.

@@ -1,4 +1,4 @@
-package com.herokuapp.dragoncards;
+package com.herokuapp.dragoncards.game;
 
 /**
  * Representations of the different actions a dragon can perform when battling.

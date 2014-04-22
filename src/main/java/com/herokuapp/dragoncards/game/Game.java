@@ -1,7 +1,9 @@
-package com.herokuapp.dragoncards;
+package com.herokuapp.dragoncards.game;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import com.herokuapp.dragoncards.Player;
 
 /**
  * Does the heavy lifting for the game's logic. Manages the state of the game

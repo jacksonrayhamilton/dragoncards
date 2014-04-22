@@ -1,4 +1,4 @@
-package com.herokuapp.dragoncards;
+package com.herokuapp.dragoncards.game;
 
 /**
  * An action that is related to the action of "collecting" cards, be it from the

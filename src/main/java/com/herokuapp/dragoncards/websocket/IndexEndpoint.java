@@ -1,4 +1,4 @@
-package com.herokuapp.dragoncards;
+package com.herokuapp.dragoncards.websocket;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;

@@ -2,10 +2,10 @@ package com.herokuapp.dragoncards.messages.client;
 
 import javax.json.JsonObject;
 
-import com.herokuapp.dragoncards.ActionTarget;
-import com.herokuapp.dragoncards.CollectAction;
-import com.herokuapp.dragoncards.PreliminaryAction;
-import com.herokuapp.dragoncards.SummonAction;
+import com.herokuapp.dragoncards.game.ActionTarget;
+import com.herokuapp.dragoncards.game.CollectAction;
+import com.herokuapp.dragoncards.game.PreliminaryAction;
+import com.herokuapp.dragoncards.game.SummonAction;
 import com.herokuapp.dragoncards.messages.Message;
 
 public class PreliminaryActionMessage extends Message {

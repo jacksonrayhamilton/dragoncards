@@ -7,10 +7,9 @@ import com.herokuapp.dragoncards.messages.Message;
 
 public class UpdateLobbyMessage extends Message {
   public List<Player> playersJoined;
-  public List<String> playersLeft;
+  public List<Player> playersLeft;
 
-  public UpdateLobbyMessage(List<Player> playersJoined, List<String> playersLeft) {
-    super();
+  public UpdateLobbyMessage(List<Player> playersJoined, List<Player> playersLeft) {
     this.playersJoined = playersJoined;
     this.playersLeft = playersLeft;
   }

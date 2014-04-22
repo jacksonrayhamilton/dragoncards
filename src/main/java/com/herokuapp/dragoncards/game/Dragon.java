@@ -1,12 +1,17 @@
 package com.herokuapp.dragoncards.game;
 
+import javax.json.Json;
+import javax.json.JsonValue;
+
+import com.herokuapp.dragoncards.JsonSerializable;
+
 /**
  * A dragon which a player can battle with. A dragons is synonymous with the
  * card that summoned it.
  * 
  * @author Jackson Hamilton
  */
-public class Dragon extends Card {
+public class Dragon extends Card implements JsonSerializable {
   private final double maxLife;
   private double life;
   private final double power;
@@ -84,5 +89,17 @@ public class Dragon extends Card {
         + "  power: " + power + "\n"
         + "  boost: " + this.boost + "\n"
         + "}";
+  }
+
+  @Override
+  public JsonValue toJson() {
+    return Json.createObjectBuilder()
+        .add("element", this.element.toString())
+        .add("level", this.level)
+        .add("maxLife", this.maxLife)
+        .add("life", this.life)
+        .add("power", this.power)
+        .add("boost", this.boost)
+        .build();
   }
 }

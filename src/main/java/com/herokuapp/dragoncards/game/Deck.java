@@ -3,12 +3,17 @@ package com.herokuapp.dragoncards.game;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import javax.json.Json;
+import javax.json.JsonValue;
+
+import com.herokuapp.dragoncards.JsonSerializable;
+
 /**
  * Container of all yet-undrawn cards in the game.
  * 
  * @author Jackson Hamilton
  */
-public class Deck extends CardCollection {
+public class Deck extends CardCollection implements JsonSerializable {
 
   /**
    * Constructs a pre-shuffled deck of cards.
@@ -40,6 +45,13 @@ public class Deck extends CardCollection {
    */
   public Card draw() {
     return this.cards.remove(this.cards.size() - 1);
+  }
+
+  @Override
+  public JsonValue toJson() {
+    return Json.createObjectBuilder()
+        .add("size", this.size())
+        .build();
   }
 
 }

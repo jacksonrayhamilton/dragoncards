@@ -1,11 +1,16 @@
 package com.herokuapp.dragoncards.game;
 
+import javax.json.Json;
+import javax.json.JsonValue;
+
+import com.herokuapp.dragoncards.JsonSerializable;
+
 /**
  * A card representing an elemental dragon.
  * 
  * @author Jackson Hamilton
  */
-public class Card {
+public class Card implements JsonSerializable {
   protected final Element element;
   protected final int level;
 
@@ -31,6 +36,14 @@ public class Card {
 
   public boolean equals(Card other) {
     return (this.element == other.getElement() && this.level == other.getLevel());
+  }
+
+  @Override
+  public JsonValue toJson() {
+    return Json.createObjectBuilder()
+        .add("element", this.element.toString())
+        .add("level", this.level)
+        .build();
   }
 
 }

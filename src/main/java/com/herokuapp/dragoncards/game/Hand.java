@@ -3,12 +3,19 @@ package com.herokuapp.dragoncards.game;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonValue;
+
+import com.herokuapp.dragoncards.JsonSerializable;
+
 /**
  * The contents of a player's hand.
  * 
  * @author Jackson Hamilton
  */
-public class Hand extends CardCollection {
+public class Hand extends CardCollection implements JsonSerializable {
 
   public Hand() {
     this.cards = new ArrayList<Card>(7);
@@ -33,5 +40,21 @@ public class Hand extends CardCollection {
       }
     }
     return null;
+  }
+
+  @Override
+  public JsonValue toJson() {
+    JsonObjectBuilder objectBuilder = Json.createObjectBuilder()
+        .add("size", this.size());
+
+    JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+
+    for (Card card : this.cards) {
+      arrayBuilder.add(card.toJson());
+    }
+
+    return objectBuilder
+        .add("cards", arrayBuilder)
+        .build();
   }
 }

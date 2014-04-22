@@ -62,7 +62,7 @@
 
 {
   "toClient": "duelRequested",
-  "opponent": "4444" // uuid of the requester.
+  "opponent": {} // Data about the requester.
   // Actually may want to send down some data on the user too.
 }
 
@@ -81,11 +81,10 @@
 
 {
   "toClient": "movePlayerToRoom",
-  "roomData": {
-    "id": "XXXX",
-    "opponent": "6666" // will be different for each player
+  "room": {
+    "id": "XXXX"
   },
-  "gameData": {
+  "game": {
     "turnPlayer": "6666", // randomly-chosen
     "deck": {
       "size": 63

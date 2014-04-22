@@ -2,12 +2,15 @@ package com.herokuapp.dragoncards;
 
 import java.util.UUID;
 
+import javax.json.Json;
+import javax.json.JsonValue;
+
 /**
  * Representation of a player (client) who seeks matches on the game network.
  * 
  * @author Jackson Hamilton
  */
-public class Player {
+public class Player implements JsonSerializable {
   private String name;
   private String uuid;
   private State state;
@@ -24,5 +27,17 @@ public class Player {
         + "  uuid: " + this.uuid + "\n"
         + "  state: " + this.state + "\n"
         + "}";
+  }
+
+  @Override
+  public JsonValue toJson() {
+    return Json.createObjectBuilder()
+        .add("name", this.name)
+        .add("uuid", this.uuid)
+        .build();
+  }
+
+  public String getUuid() {
+    return this.uuid;
   }
 }

@@ -1,8 +1,14 @@
 package com.herokuapp.dragoncards.game;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import javax.json.Json;
+import javax.json.JsonValue;
+
+import com.herokuapp.dragoncards.JsonSerializable;
 import com.herokuapp.dragoncards.Player;
 
 /**
@@ -11,7 +17,7 @@ import com.herokuapp.dragoncards.Player;
  * 
  * @author Jackson Hamilton
  */
-public class Game {
+public class Game implements JsonSerializable {
 
   /**
    * Container for all the game pieces owned by an individual player.
@@ -36,6 +42,7 @@ public class Game {
 
   private Player[] players;
   private int playerCount;
+  private Map<Player, Integer> playerIndexes;
   private PlayerGameData[] playerGameData;
   private Deck deck;
   private int turnPlayer;
@@ -45,10 +52,13 @@ public class Game {
 
   public Game(Player... players) {
     this.players = players;
+
     this.playerCount = this.players.length;
+    this.playerIndexes = new HashMap<>(this.playerCount);
     this.playerGameData = new PlayerGameData[this.playerCount];
 
     for (int i = 0; i < this.playerCount; i++) {
+      this.playerIndexes.put(this.players[i], i);
       this.playerGameData[i] = new PlayerGameData();
     }
 
@@ -66,8 +76,16 @@ public class Game {
     }
   }
 
+  public int getPlayerIndex(Player player) {
+    return this.playerIndexes.get(player);
+  }
+
   public Hand getHand(int player) {
     return this.playerGameData[player].hand;
+  }
+
+  public Hand getHand(Player player) {
+    return this.getHand(this.getPlayerIndex(player));
   }
 
   public DiscardPile getDiscardPile(int player) {
@@ -293,6 +311,14 @@ public class Game {
 
   public int getPlayerCount() {
     return this.playerCount;
+  }
+
+  @Override
+  public JsonValue toJson() {
+    return Json.createObjectBuilder()
+        .add("turnPlayer", this.turnPlayer)
+        .add("deck", this.deck.toJson())
+        .build();
   }
 
 }

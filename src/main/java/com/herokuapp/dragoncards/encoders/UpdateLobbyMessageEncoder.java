@@ -29,11 +29,11 @@ public class UpdateLobbyMessageEncoder implements
     JsonArrayBuilder arrayBuilder1 = Json.createArrayBuilder();
     JsonArrayBuilder arrayBuilder2 = Json.createArrayBuilder();
 
-    for (Player player : message.playersJoined) {
+    for (Player player : message.getPlayersJoined()) {
       arrayBuilder1.add(player.toJson());
     }
 
-    for (Player player : message.playersLeft) {
+    for (Player player : message.getPlayersLeft()) {
       arrayBuilder2.add(player.toJson());
     }
 

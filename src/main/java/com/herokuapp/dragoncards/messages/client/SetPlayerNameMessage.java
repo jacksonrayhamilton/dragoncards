@@ -5,9 +5,13 @@ import javax.json.JsonObject;
 import com.herokuapp.dragoncards.messages.Message;
 
 public class SetPlayerNameMessage extends Message {
-  public String name;
+  private final String name;
 
   public SetPlayerNameMessage(JsonObject json) {
     this.name = json.getString("name");
+  }
+
+  public String getName() {
+    return this.name;
   }
 }

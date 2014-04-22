@@ -21,7 +21,7 @@ public class DrawMessageEncoder implements Encoder.Text<DrawMessage> {
   public String encode(DrawMessage message) throws EncodeException {
     return Json.createObjectBuilder()
         .add("toClient", "draw")
-        .add("card", message.card.toJson())
+        .add("card", message.getCard().toJson())
         .build()
         .toString();
   }

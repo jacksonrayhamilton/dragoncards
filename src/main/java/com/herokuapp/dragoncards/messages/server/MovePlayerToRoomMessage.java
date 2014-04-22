@@ -4,11 +4,19 @@ import com.herokuapp.dragoncards.Player;
 import com.herokuapp.dragoncards.websocket.Room;
 
 public class MovePlayerToRoomMessage {
-  public Player player;
-  public Room room;
+  private final Player player;
+  private final Room room;
 
   public MovePlayerToRoomMessage(Player player, Room room) {
     this.player = player;
     this.room = room;
+  }
+
+  public Player getPlayer() {
+    return this.player;
+  }
+
+  public Room getRoom() {
+    return this.room;
   }
 }

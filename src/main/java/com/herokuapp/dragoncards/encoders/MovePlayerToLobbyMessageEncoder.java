@@ -27,7 +27,7 @@ public class MovePlayerToLobbyMessageEncoder implements
         .add("toClient", "movePlayerToLobby");
     JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
 
-    for (Player player : message.players) {
+    for (Player player : message.getPlayers()) {
       arrayBuilder.add(player.toJson());
     }
 

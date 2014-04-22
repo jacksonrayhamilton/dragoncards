@@ -22,8 +22,8 @@ public class CreatePlayerMessageEncoder implements
   public String encode(CreatePlayerMessage message) throws EncodeException {
     return Json.createObjectBuilder()
         .add("toClient", "createPlayer")
-        .add("name", message.player.getName())
-        .add("uuid", message.player.getUuid())
+        .add("name", message.getPlayer().getName())
+        .add("uuid", message.getPlayer().getUuid())
         .build()
         .toString();
   }

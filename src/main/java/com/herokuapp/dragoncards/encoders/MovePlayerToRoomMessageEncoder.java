@@ -21,12 +21,12 @@ public class MovePlayerToRoomMessageEncoder implements
 
   @Override
   public String encode(MovePlayerToRoomMessage message) throws EncodeException {
-    Game game = message.room.getGame();
+    Game game = message.getRoom().getGame();
     return Json.createObjectBuilder()
         .add("toClient", "movePlayerToRoom")
-        .add("room", message.room.toJson())
+        .add("room", message.getRoom().toJson())
         .add("game", game.toJson())
-        .add("yourHand", game.getHand(message.player).toJson())
+        .add("yourHand", game.getHand(message.getPlayer()).toJson())
         .add("opponentHand", Json.createObjectBuilder()
             .add("size", game.getHand(0).size())) // A little smelly but ok.
         .build()

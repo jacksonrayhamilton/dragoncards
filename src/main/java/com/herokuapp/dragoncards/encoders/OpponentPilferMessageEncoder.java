@@ -22,7 +22,7 @@ public class OpponentPilferMessageEncoder implements
   public String encode(OpponentPilferMessage message) throws EncodeException {
     return Json.createObjectBuilder()
         .add("toClient", "opponentPilfer")
-        .add("target", message.target)
+        .add("target", message.getTarget())
         .build()
         .toString();
   }

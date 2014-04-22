@@ -67,7 +67,7 @@ public class IndexEndpoint {
 
       // Create a player to associate with the current user.
       Player player =
-          new Player(((SetPlayerNameMessage) message).name, State.IN_LOBBY);
+          new Player(((SetPlayerNameMessage) message).getName(), State.IN_LOBBY);
       session.getUserProperties().put("player", player);
 
       // Alert the client of the player created.

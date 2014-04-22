@@ -4,9 +4,13 @@ import com.herokuapp.dragoncards.game.Card;
 import com.herokuapp.dragoncards.messages.Message;
 
 public class DrawMessage extends Message {
-  public Card card;
+  private final Card card;
 
   public DrawMessage(Card card) {
     this.card = card;
+  }
+
+  public Card getCard() {
+    return this.card;
   }
 }

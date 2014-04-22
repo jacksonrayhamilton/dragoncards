@@ -10,7 +10,7 @@ import com.herokuapp.dragoncards.game.BattleAction;
 import com.herokuapp.dragoncards.messages.Message;
 
 public class BattleActionsMessage extends Message {
-  public List<BattleAction> actions;
+  private final List<BattleAction> actions;
 
   public BattleActionsMessage(JsonObject json) {
     this.actions = new ArrayList<>(2);
@@ -37,5 +37,9 @@ public class BattleActionsMessage extends Message {
           break;
       }
     }
+  }
+
+  public List<BattleAction> getActions() {
+    return this.actions;
   }
 }

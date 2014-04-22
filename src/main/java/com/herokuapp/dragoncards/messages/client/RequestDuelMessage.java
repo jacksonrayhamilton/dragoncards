@@ -5,9 +5,13 @@ import javax.json.JsonObject;
 import com.herokuapp.dragoncards.messages.Message;
 
 public class RequestDuelMessage extends Message {
-  public String uuid;
+  private final String uuid;
 
   public RequestDuelMessage(JsonObject json) {
     this.uuid = json.getString("uuid");
+  }
+
+  public String getUuid() {
+    return this.uuid;
   }
 }

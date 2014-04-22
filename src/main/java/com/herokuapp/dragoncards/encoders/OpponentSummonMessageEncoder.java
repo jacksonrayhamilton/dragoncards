@@ -28,7 +28,7 @@ public class OpponentSummonMessageEncoder implements
 
     JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
 
-    for (Dragon dragon : message.dragons) {
+    for (Dragon dragon : message.getDragons()) {
       arrayBuilder.add(dragon.toJson());
     }
 

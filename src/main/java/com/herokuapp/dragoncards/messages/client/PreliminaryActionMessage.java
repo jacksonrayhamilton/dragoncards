@@ -9,8 +9,8 @@ import com.herokuapp.dragoncards.game.SummonAction;
 import com.herokuapp.dragoncards.messages.Message;
 
 public class PreliminaryActionMessage extends Message {
-  public PreliminaryAction action;
-  public ActionTarget target;
+  private final PreliminaryAction action;
+  private final ActionTarget target;
 
   public PreliminaryActionMessage(JsonObject json) {
     String action = json.getString("action");
@@ -23,11 +23,22 @@ public class PreliminaryActionMessage extends Message {
         this.action = SummonAction.valueOf(action.toUpperCase());
         break;
       default:
+        this.action = null;
         break;
     }
     String target = json.getString("action");
     if (target != null) {
       this.target = ActionTarget.valueOf(target.toUpperCase());
+    } else {
+      this.target = null;
     }
+  }
+
+  public PreliminaryAction getAction() {
+    return this.action;
+  }
+
+  public ActionTarget getTarget() {
+    return this.target;
   }
 }

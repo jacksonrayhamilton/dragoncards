@@ -74,6 +74,12 @@
 }
 
 // If false, the requester is notified and nothing happens.
+
+{
+  "toClient": "duelRequestAnswered",
+  "accept": false
+}
+
 // If true, the game begins.
 // Server-side both players are moved from the lobby
 // into a new room. A Game is also instantiated.

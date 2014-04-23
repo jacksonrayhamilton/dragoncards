@@ -6,7 +6,13 @@
 </head>
 <body>
   <h1>The Dragons have Woken!</h1>
-  <input id="setPlayerNameInput" type="text"> <button id="setPlayerNameButton">Set Player Name</button>
+  <select id="toServerSelect">
+    <option value="setPlayerName">setPlayerName</option>
+    <option value="requestDuel">requestDuel</option>
+  </select>
+  <input id="jsonInput" type="text">
+  <button id="submitButton">Submit</button>
+  <pre id="responsePre"></pre>
   <script src="js/client.js"></script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 var ws;
+var otherWs;
 
 function connect() {
   ws = new WebSocket('ws://' + location.host + '/index');
@@ -6,26 +7,45 @@ function connect() {
   ws.onmessage = onMessage;
 }
 
+window.addEventListener('load', connect, false);
+
 function onOpen(e) {
-  console.log('Connected to websocket.')
+  console.log('Connected to websocket.');
 }
 
 function onMessage(e) {
-  console.log(JSON.parse(e.data));
+  var data = JSON.parse(e.data);
+  console.log(data);
+  responsePre.innerHTML += JSON.stringify(data, null, '  ') + '\n\n';
 }
 
 function sendMessage(obj) {
   ws.send(JSON.stringify(obj));
 }
 
-var setPlayerNameInput = document.getElementById('setPlayerNameInput');
-var setPlayerNameButton = document.getElementById('setPlayerNameButton');
+var toServerSelect = document.getElementById('toServerSelect');
+var jsonInput = document.getElementById('jsonInput');
+var submitButton = document.getElementById('submitButton');
+var responsePre = document.getElementById('responsePre');
 
-setPlayerNameButton.addEventListener('click', function () {
-  sendMessage({
-    toServer: 'setPlayerName',
-    name: setPlayerNameInput.value
-  });
-}, false)
+submitButton.addEventListener('click', function () {
+  var message = {
+    toServer: toServerSelect.options[toServerSelect.selectedIndex].value
+  };
+  
+  try {
+    var json = JSON.parse(jsonInput.value);
+  } catch (e) {
+    console.error('Parsing error.');
+    return;
+  }
+  
+  for (var prop in json) {
+    if (json.hasOwnProperty(prop)) {
+      message[prop] = json[prop];
+    }
+  }
+  
+  sendMessage(message);
+}, false);
 
-window.addEventListener('load', connect, false);

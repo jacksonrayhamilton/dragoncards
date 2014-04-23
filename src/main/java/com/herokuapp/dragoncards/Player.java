@@ -12,7 +12,7 @@ import javax.json.JsonValue;
  */
 public class Player implements JsonSerializable {
   private String name;
-  private String uuid;
+  private final String uuid;
   private State state;
 
   public Player(String name, State state) {
@@ -21,6 +21,15 @@ public class Player implements JsonSerializable {
     this.state = state;
   }
 
+  public Player(String name) {
+    this(name, State.IN_LIMBO);
+  }
+
+  public Player() {
+    this("Anonymous", State.IN_LIMBO);
+  }
+
+  @Override
   public String toString() {
     return "Player: {\n"
         + "  name: " + this.name + "\n"
@@ -43,5 +52,25 @@ public class Player implements JsonSerializable {
 
   public String getName() {
     return this.name;
+  }
+
+  public String getInformationalName() {
+    return this.name + " (" + this.uuid + ")";
+  }
+
+  public State getState() {
+    return this.state;
+  }
+
+  public void setState(State state) {
+    this.state = state;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public boolean equals(Player player) {
+    return this.getUuid().equals(player.getUuid());
   }
 }

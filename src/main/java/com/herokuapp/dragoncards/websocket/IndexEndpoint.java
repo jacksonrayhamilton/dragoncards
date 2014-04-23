@@ -253,13 +253,13 @@ public class IndexEndpoint {
       cleanUpDuelRequests(requestee);
       requester.clearDuelRequests();
       requestee.clearDuelRequests();
-      lobby.removePlayer(requester);
-      lobby.removePlayer(requestee);
+      // lobby.removePlayer(requester);
+      // lobby.removePlayer(requestee);
 
-      Room room = new Room();
-      room.addPlayer(requester);
-      room.addPlayer(requestee);
-      room.initializeGame();
+      // Room room = new Room();
+      // room.addPlayer(requester);
+      // room.addPlayer(requestee);
+      // room.initializeGame();
 
       // TODO: Add room to a HashMap of rooms.
       // TODO: Send message about gamestate.

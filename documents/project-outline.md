@@ -145,6 +145,8 @@ Course of Action
 - Implement client side gamestate to mimmick server-side. Test,
 - Implement client-to-server messaging to get gamestate info. Async test?
 
+- Do decoding checking.
+
 - Accumulate graphical assets.
 - Implement client side canvas display.
 - Cross-browser testing.

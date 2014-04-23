@@ -22,7 +22,7 @@ public class DuelRequestedMessageEncoder implements
   public String encode(DuelRequestedMessage message) throws EncodeException {
     return Json.createObjectBuilder()
         .add("toClient", "duelRequested")
-        .add("opponent", message.getOpponent().toJson())
+        .add("duelRequest", message.getDuelRequest().toJson())
         .build()
         .toString();
   }

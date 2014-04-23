@@ -62,14 +62,20 @@
 
 {
   "toClient": "duelRequested",
-  "opponent": {} // Data about the requester.
-  // Actually may want to send down some data on the user too.
+  "duelRequest": {
+    "uuid": "PPPP" // UUID of the request.
+    "requester": {} // player
+  }
 }
 
+// Server creates a DuelRequest object that can be accessed via
+// its UUID. The DuelRequest contains a reference to the
+// requester and the requester's session.
 // Requestee may respond with either an accept or a decline.
 
 {
   "toServer": "answerDuelRequest",
+  "uuid": "4444", // UUID of the DuelRequest.
   "accept": true // or false
 }
 
@@ -77,6 +83,7 @@
 
 {
   "toClient": "duelRequestAnswered",
+  "player": {}, // Data about the acceptee (or denier).
   "accept": false
 }
 

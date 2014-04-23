@@ -1,5 +1,8 @@
 package com.herokuapp.dragoncards;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import javax.json.Json;
@@ -14,11 +17,14 @@ public class Player implements JsonSerializable {
   private String name;
   private final String uuid;
   private State state;
+  private List<DuelRequest> duelRequests;
 
   public Player(String name, State state) {
     this.name = name;
     this.uuid = UUID.randomUUID().toString();
     this.state = state;
+    this.duelRequests =
+        Collections.synchronizedList(new ArrayList<DuelRequest>());
   }
 
   public Player(String name) {
@@ -72,5 +78,21 @@ public class Player implements JsonSerializable {
 
   public boolean equals(Player player) {
     return this.getUuid().equals(player.getUuid());
+  }
+
+  public List<DuelRequest> getDuelRequests() {
+    return this.duelRequests;
+  }
+
+  public void clearDuelRequests() {
+    this.duelRequests.clear();
+  }
+
+  public void addDuelRequest(DuelRequest duelRequest) {
+    this.duelRequests.add(duelRequest);
+  }
+
+  public void removeDuelRequest(DuelRequest duelRequest) {
+    this.duelRequests.remove(duelRequest);
   }
 }

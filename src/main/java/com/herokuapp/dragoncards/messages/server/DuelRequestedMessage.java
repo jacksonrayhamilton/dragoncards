@@ -1,16 +1,16 @@
 package com.herokuapp.dragoncards.messages.server;
 
-import com.herokuapp.dragoncards.Player;
+import com.herokuapp.dragoncards.DuelRequest;
 import com.herokuapp.dragoncards.messages.Message;
 
 public class DuelRequestedMessage extends Message {
-  private final Player opponent;
+  private final DuelRequest duelRequest;
 
-  public DuelRequestedMessage(Player opponent) {
-    this.opponent = opponent;
+  public DuelRequestedMessage(DuelRequest duelRequest) {
+    this.duelRequest = duelRequest;
   }
 
-  public Player getOpponent() {
-    return opponent;
+  public DuelRequest getDuelRequest() {
+    return this.duelRequest;
   }
 }

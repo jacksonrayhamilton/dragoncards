@@ -23,6 +23,7 @@ public class DuelRequestAnsweredMessageEncoder implements
       throws EncodeException {
     return Json.createObjectBuilder()
         .add("toClient", "duelRequestAnswered")
+        .add("player", message.getPlayer().toJson())
         .add("accept", message.isAccept())
         .build()
         .toString();

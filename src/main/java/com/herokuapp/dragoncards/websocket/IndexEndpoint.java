@@ -13,6 +13,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import com.herokuapp.dragoncards.DuelRequest;
 import com.herokuapp.dragoncards.Player;
 import com.herokuapp.dragoncards.State;
 import com.herokuapp.dragoncards.decoders.MessageDecoder;
@@ -30,6 +31,7 @@ import com.herokuapp.dragoncards.encoders.QueryPlayerNameMessageEncoder;
 import com.herokuapp.dragoncards.encoders.QueryPreliminaryActionMessageEncoder;
 import com.herokuapp.dragoncards.encoders.UpdateLobbyMessageEncoder;
 import com.herokuapp.dragoncards.messages.Message;
+import com.herokuapp.dragoncards.messages.client.AnswerDuelRequestMessage;
 import com.herokuapp.dragoncards.messages.client.RequestDuelMessage;
 import com.herokuapp.dragoncards.messages.client.SetPlayerNameMessage;
 import com.herokuapp.dragoncards.messages.server.CreatePlayerMessage;
@@ -61,22 +63,82 @@ import com.herokuapp.dragoncards.messages.server.QueryPlayerNameMessage;
 public class IndexEndpoint {
 
   private static final Logger logger = Logger.getLogger("IndexEndpoint");
+
+  /**
+   * Player UUID to session mapping.
+   */
   private static Map<String, Session> sessions = new ConcurrentHashMap<>();
+
+  /**
+   * UUID to players mapping.
+   */
   private static Map<String, Player> players = new ConcurrentHashMap<>();
+
+  /**
+   * Mapping of duel request UUIDs to duel requests.
+   */
+  private static Map<String, DuelRequest> duelRequests =
+      new ConcurrentHashMap<>();
+
+  /**
+   * Location for idle duelists to wait for games.
+   */
   private static Lobby lobby = new Lobby();
 
+  /**
+   * Gets the player associated with the argument session.
+   * 
+   * @param session
+   * @return
+   */
   private static Player getPlayer(Session session) {
     return (Player) session.getUserProperties().get("player");
   }
 
+  /**
+   * Gets a player with the argument uuid.
+   * 
+   * @param uuid
+   * @return
+   */
+  private static Player getPlayer(String uuid) {
+    try {
+      return players.get(uuid);
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
+  }
+
+  /**
+   * Gets a session for a requested duel given the uuid of the requestee.
+   * 
+   * @param uuid
+   * @return
+   */
+  private static DuelRequest getDuelRequest(String uuid) {
+    try {
+      return duelRequests.get(uuid);
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
+  }
+
+  /**
+   * Sends an asyncronous JSON message to a a client.
+   * 
+   * @param session
+   *          Session data for the client.
+   * @param message
+   *          JSON message to send.
+   * @return
+   */
   private static Future<Void> sendMessage(Session session, Object message) {
     return session.getAsyncRemote().sendObject(message);
   }
 
   /**
-   * Handles users' attempts to set their names.
-   * 
-   * Has the side effect of adding the player to the lobby.
+   * Sets a player's name and adds him to the lobby. Poorly named method. Should
+   * only be called once.
    * 
    * @param session
    * @param message
@@ -85,6 +147,12 @@ public class IndexEndpoint {
       SetPlayerNameMessage message) {
 
     Player player = getPlayer(session);
+
+    // Deny if already named.
+    if (player.getState() != State.NAMING) {
+      return;
+    }
+
     String newName = message.getName();
 
     if (newName.length() > 0) {
@@ -104,6 +172,8 @@ public class IndexEndpoint {
   /**
    * Handles users' attempts to request duels of other players.
    * 
+   * TODO: Make it so you can't spam more than one DuelRequest.
+   * 
    * @param session
    * @param message
    */
@@ -112,12 +182,18 @@ public class IndexEndpoint {
 
     Player requester = getPlayer(session);
     String requesteeUuid = message.getUuid();
-    Player requestee = players.get(requesteeUuid);
+    Player requestee = getPlayer(requesteeUuid);
+
+    // Deny if the requestee doesn't exist.
+    if (requestee == null) {
+      return;
+    }
 
     logger.log(
         Level.INFO,
         String.format("%s requested a duel with %s.",
-            requester.getInformationalName(), requestee.getInformationalName()));
+            requester.getInformationalName(),
+            requestee.getInformationalName()));
 
     // Deny if requester is self or not in lobby.
     if (requester.equals(requestee) ||
@@ -127,13 +203,70 @@ public class IndexEndpoint {
 
     // Automatically reject if the requestee is not in the lobby.
     if (requestee.getState() != State.IN_LOBBY) {
-      sendMessage(session, new DuelRequestAnsweredMessage(false));
+      sendMessage(session, new DuelRequestAnsweredMessage(requestee, false));
       return;
     }
 
+    // Create a duel request with "contact info" for the other player.
+    DuelRequest duelRequest = new DuelRequest(requester, session);
+    duelRequests.put(duelRequest.getUuid(), duelRequest);
+    requester.addDuelRequest(duelRequest);
+
     // Send the duel request to the requestee.
     Session requesteeSession = sessions.get(requesteeUuid);
-    sendMessage(requesteeSession, new DuelRequestedMessage(requester));
+    sendMessage(requesteeSession, new DuelRequestedMessage(duelRequest));
+  }
+
+  /**
+   * Handles users' attempts to answer requests from other players to duel.
+   * 
+   * @param session
+   * @param message
+   */
+  private void onAnswerDuelRequestMessage(Session session,
+      AnswerDuelRequestMessage message) {
+
+    Player requestee = getPlayer(session);
+    String duelRequestUuid = message.getUuid();
+    DuelRequest duelRequest = getDuelRequest(duelRequestUuid);
+
+    // Deny if no duel request exists.
+    if (duelRequest == null) {
+      return;
+    }
+
+    Player requester = duelRequest.getRequester();
+    Session requesterSession = duelRequest.getRequesterSession();
+
+    if (message.isAccept()) {
+      logger.log(
+          Level.INFO,
+          String.format("%s accepted a duel with %s.",
+              requestee.getInformationalName(),
+              requester.getInformationalName()));
+
+      sendMessage(requesterSession, new DuelRequestAnsweredMessage(requestee,
+          true));
+
+      // Drop all other duel requests the participants had before.
+      cleanUpDuelRequests(requestee);
+      cleanUpDuelRequests(requester);
+      requestee.clearDuelRequests();
+      requester.clearDuelRequests();
+    } else {
+      logger.log(
+          Level.INFO,
+          String.format("%s rejected a duel with %s.",
+              requestee.getInformationalName(),
+              requester.getInformationalName()));
+
+      sendMessage(requesterSession, new DuelRequestAnsweredMessage(requestee,
+          false));
+
+      // Drop the duel request that was rejected.
+      duelRequests.remove(duelRequestUuid);
+      requester.removeDuelRequest(duelRequest);
+    }
   }
 
   @OnMessage
@@ -142,6 +275,9 @@ public class IndexEndpoint {
       this.onSetPlayerNameMessage(session, (SetPlayerNameMessage) message);
     } else if (message instanceof RequestDuelMessage) {
       this.onRequestDuelMessage(session, (RequestDuelMessage) message);
+    } else if (message instanceof AnswerDuelRequestMessage) {
+      this.onAnswerDuelRequestMessage(session,
+          (AnswerDuelRequestMessage) message);
     }
   }
 
@@ -157,7 +293,22 @@ public class IndexEndpoint {
     logger.log(Level.INFO, "Connection opened.");
 
     // Ask the player for his name.
+    player.setState(State.NAMING);
     sendMessage(session, new QueryPlayerNameMessage());
+  }
+
+  /**
+   * Removes all duel requests initiated by the argument player.
+   * 
+   * @param player
+   */
+  private static void cleanUpDuelRequests(Player player) {
+    for (DuelRequest duelRequest : player.getDuelRequests()) {
+      try {
+        duelRequests.remove(duelRequest.getUuid());
+      } catch (NullPointerException e) {
+      }
+    }
   }
 
   /**
@@ -167,9 +318,10 @@ public class IndexEndpoint {
    */
   private void cleanUpClient(Session session) {
     Player player = getPlayer(session);
+    cleanUpDuelRequests(player);
     lobby.removePlayer(player);
     players.remove(player.getUuid());
-    sessions.remove(session);
+    sessions.remove(player.getUuid());
   }
 
   @OnClose

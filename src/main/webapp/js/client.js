@@ -16,7 +16,6 @@ function onOpen(e) {
 function onMessage(e) {
   var data = JSON.parse(e.data);
   console.log(data);
-  responsePre.innerHTML += JSON.stringify(data, null, '  ') + '\n\n';
 }
 
 function sendMessage(obj) {
@@ -26,26 +25,24 @@ function sendMessage(obj) {
 var toServerSelect = document.getElementById('toServerSelect');
 var jsonInput = document.getElementById('jsonInput');
 var submitButton = document.getElementById('submitButton');
-var responsePre = document.getElementById('responsePre');
 
 submitButton.addEventListener('click', function () {
   var message = {
     toServer: toServerSelect.options[toServerSelect.selectedIndex].value
   };
-  
+
   try {
     var json = JSON.parse(jsonInput.value);
   } catch (e) {
     console.error('Parsing error.');
     return;
   }
-  
+
   for (var prop in json) {
     if (json.hasOwnProperty(prop)) {
       message[prop] = json[prop];
     }
   }
-  
+
   sendMessage(message);
 }, false);
-

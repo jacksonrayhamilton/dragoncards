@@ -1,37 +1,50 @@
 package com.herokuapp.dragoncards.websocket;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import javax.json.Json;
 import javax.json.JsonValue;
 
 import com.herokuapp.dragoncards.JsonSerializable;
+import com.herokuapp.dragoncards.Player;
+import com.herokuapp.dragoncards.State;
 import com.herokuapp.dragoncards.game.Game;
 
 public class Room implements JsonSerializable {
 
-  // TODO: Add collection of players.
-  private long id;
+  private final List<Player> players;
+  private final String uuid;
   private Game game;
 
-  public long getId() {
-    return this.id;
+  public Room() {
+    this.players = new ArrayList<Player>();
+    this.uuid = UUID.randomUUID().toString();
   }
 
-  public void setId(long id) {
-    this.id = id;
+  public void initializeGame() {
+    this.game = new Game(this.players.toArray(new Player[this.players.size()]));
+  }
+
+  public void addPlayer(Player player) {
+    this.players.add(player);
+    player.setState(State.DUELING);
+  }
+
+  public String getUuid() {
+    return this.uuid;
   }
 
   public Game getGame() {
-    return game;
-  }
-
-  public void setGame(Game game) {
-    this.game = game;
+    return this.game;
   }
 
   @Override
   public JsonValue toJson() {
     return Json.createObjectBuilder()
-        .add("id", this.getId())
+        .add("uuid", this.uuid)
         .build();
   }
+
 }

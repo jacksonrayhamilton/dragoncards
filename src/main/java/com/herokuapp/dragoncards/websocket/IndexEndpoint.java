@@ -249,10 +249,20 @@ public class IndexEndpoint {
           true));
 
       // Drop all other duel requests the participants had before.
-      cleanUpDuelRequests(requestee);
       cleanUpDuelRequests(requester);
-      requestee.clearDuelRequests();
+      cleanUpDuelRequests(requestee);
       requester.clearDuelRequests();
+      requestee.clearDuelRequests();
+      lobby.removePlayer(requester);
+      lobby.removePlayer(requestee);
+
+      Room room = new Room();
+      room.addPlayer(requester);
+      room.addPlayer(requestee);
+      room.initializeGame();
+
+      // TODO: Add room to a HashMap of rooms.
+      // TODO: Send message about gamestate.
     } else {
       logger.log(
           Level.INFO,
@@ -312,11 +322,11 @@ public class IndexEndpoint {
   }
 
   /**
-   * Removes all traces of the user associated with a given session.
+   * Removes all traces of the argument session.
    * 
    * @param session
    */
-  private void cleanUpClient(Session session) {
+  private static void cleanUpClient(Session session) {
     Player player = getPlayer(session);
     cleanUpDuelRequests(player);
     lobby.removePlayer(player);
@@ -326,13 +336,13 @@ public class IndexEndpoint {
 
   @OnClose
   public void closedConnection(Session session) {
-    this.cleanUpClient(session);
+    cleanUpClient(session);
     logger.log(Level.INFO, "Connection closed.");
   }
 
   @OnError
   public void error(Session session, Throwable t) {
-    this.cleanUpClient(session);
+    cleanUpClient(session);
     logger.log(Level.INFO, t.toString());
     logger.log(Level.INFO, "Connection error.");
   }

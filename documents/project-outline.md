@@ -135,14 +135,14 @@ Player
 
 Course of Action
 ----------------
-- Define JSON API
+- Define JSON API. DONE
 
-- Implement headless game with testing.
-  - Expect certain inputs from the JSON API.
+- Implement headless game with testing. DONE
+  - Expect certain inputs from the JSON API. DONE
 
-- Implement lobby and matchmaking server-side. Test.
+- Implement lobby and matchmaking server-side. Test. Mostly-done
 
-- Implement client side gamestate to mimmick server-side. Test,
+- Implement client side gamestate to mimmick server-side. Test.
 - Implement client-to-server messaging to get gamestate info. Async test?
 
 - Do decoding checking.

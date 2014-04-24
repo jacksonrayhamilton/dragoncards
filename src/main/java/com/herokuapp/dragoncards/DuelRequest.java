@@ -4,30 +4,29 @@ import java.util.UUID;
 
 import javax.json.Json;
 import javax.json.JsonValue;
-import javax.websocket.Session;
 
 public class DuelRequest implements JsonSerializable {
 
-  private final Player requester;
-  private final Session requesterSession;
   private final String uuid;
+  private final Player requester;
+  private final Player requestee;
 
-  public DuelRequest(Player requester, Session requesterSession) {
-    this.requester = requester;
-    this.requesterSession = requesterSession;
+  public DuelRequest(Player requester, Player requestee) {
     this.uuid = UUID.randomUUID().toString();
+    this.requester = requester;
+    this.requestee = requestee;
+  }
+
+  public String getUuid() {
+    return this.uuid;
   }
 
   public Player getRequester() {
     return this.requester;
   }
 
-  public Session getRequesterSession() {
-    return this.requesterSession;
-  }
-
-  public String getUuid() {
-    return this.uuid;
+  public Player getRequestee() {
+    return this.requestee;
   }
 
   public boolean equals(DuelRequest duelRequest) {
@@ -37,8 +36,9 @@ public class DuelRequest implements JsonSerializable {
   @Override
   public JsonValue toJson() {
     return Json.createObjectBuilder()
-        .add("requester", this.getRequester().toJson())
         .add("uuid", this.getUuid())
+        .add("requester", this.getRequester().toJson())
+        .add("requestee", this.getRequestee().toJson())
         .build();
   }
 

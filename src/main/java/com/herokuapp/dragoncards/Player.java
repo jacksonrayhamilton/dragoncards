@@ -61,7 +61,7 @@ public class Player implements JsonSerializable {
   }
 
   public String getInformationalName() {
-    return this.name + " (" + this.uuid + ")";
+    return "\"" + this.name + "\" (" + this.uuid + ")";
   }
 
   public State getState() {
@@ -92,7 +92,7 @@ public class Player implements JsonSerializable {
     this.duelRequests.add(duelRequest);
   }
 
-  public void removeDuelRequest(DuelRequest duelRequest) {
-    this.duelRequests.remove(duelRequest);
+  public boolean removeDuelRequest(DuelRequest duelRequest) {
+    return this.duelRequests.remove(duelRequest);
   }
 }

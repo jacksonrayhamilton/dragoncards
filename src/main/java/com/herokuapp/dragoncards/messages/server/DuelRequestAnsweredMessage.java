@@ -1,19 +1,19 @@
 package com.herokuapp.dragoncards.messages.server;
 
-import com.herokuapp.dragoncards.Player;
+import com.herokuapp.dragoncards.DuelRequest;
 import com.herokuapp.dragoncards.messages.Message;
 
 public class DuelRequestAnsweredMessage extends Message {
-  private final Player player;
+  private final DuelRequest duelRequest;
   private final boolean accept;
 
-  public DuelRequestAnsweredMessage(Player player, boolean accept) {
-    this.player = player;
+  public DuelRequestAnsweredMessage(DuelRequest duelRequest, boolean accept) {
+    this.duelRequest = duelRequest;
     this.accept = accept;
   }
 
-  public Player getPlayer() {
-    return player;
+  public DuelRequest getDuelRequest() {
+    return this.duelRequest;
   }
 
   public boolean isAccept() {

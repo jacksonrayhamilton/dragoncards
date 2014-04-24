@@ -70,12 +70,12 @@ public class IndexEndpoint {
   private static Map<String, Session> sessions = new ConcurrentHashMap<>();
 
   /**
-   * UUID to players mapping.
+   * Player UUID to player mapping.
    */
   private static Map<String, Player> players = new ConcurrentHashMap<>();
 
   /**
-   * Mapping of duel request UUIDs to duel requests.
+   * Duel request UUID to duel request mapping.
    */
   private static Map<String, DuelRequest> duelRequests =
       new ConcurrentHashMap<>();
@@ -86,41 +86,19 @@ public class IndexEndpoint {
   private static Lobby lobby = new Lobby();
 
   /**
-   * Gets the player associated with the argument session.
-   * 
    * @param session
-   * @return
+   * @return The player associated with the argument session.
    */
   private static Player getPlayer(Session session) {
     return (Player) session.getUserProperties().get("player");
   }
 
   /**
-   * Gets a player with the argument uuid.
-   * 
-   * @param uuid
-   * @return
+   * @param session
+   * @return The UUID associated with the argument session.
    */
-  private static Player getPlayer(String uuid) {
-    try {
-      return players.get(uuid);
-    } catch (IllegalArgumentException e) {
-      return null;
-    }
-  }
-
-  /**
-   * Gets a session for a requested duel given the uuid of the requestee.
-   * 
-   * @param uuid
-   * @return
-   */
-  private static DuelRequest getDuelRequest(String uuid) {
-    try {
-      return duelRequests.get(uuid);
-    } catch (IllegalArgumentException e) {
-      return null;
-    }
+  private static String getUuid(Session session) {
+    return (String) session.getUserProperties().get("uuid");
   }
 
   /**
@@ -148,7 +126,7 @@ public class IndexEndpoint {
 
     Player player = getPlayer(session);
 
-    // Deny if already named.
+    // Deny if already named (malicious).
     if (player.getState() != State.NAMING) {
       return;
     }
@@ -158,6 +136,11 @@ public class IndexEndpoint {
     if (newName.length() > 0) {
       player.setName(newName);
     }
+
+    logger.log(
+        Level.INFO,
+        String.format("Client `%s' set player name to `%s'.",
+            player.getUuid(), player.getName()));
 
     // Alert the client of his player's creation.
     sendMessage(session, new CreatePlayerMessage(player));
@@ -172,8 +155,6 @@ public class IndexEndpoint {
   /**
    * Handles users' attempts to request duels of other players.
    * 
-   * TODO: Make it so you can't spam more than one DuelRequest.
-   * 
    * @param session
    * @param message
    */
@@ -182,10 +163,13 @@ public class IndexEndpoint {
 
     Player requester = getPlayer(session);
     String requesteeUuid = message.getUuid();
-    Player requestee = getPlayer(requesteeUuid);
 
-    // Deny if the requestee doesn't exist.
+    // Ensure the requestee exists.
+    Player requestee = players.get(requesteeUuid);
     if (requestee == null) {
+      logger.log(Level.WARNING,
+          String.format("Requestee `%s' player not found.", requesteeUuid));
+      // TODO: Alert requester.
       return;
     }
 
@@ -195,26 +179,36 @@ public class IndexEndpoint {
             requester.getInformationalName(),
             requestee.getInformationalName()));
 
-    // Deny if requester is self or not in lobby.
+    // Deny if requester is self or not in lobby (malicious).
+    // TODO: Make it so you can't spam more than one DuelRequest to the same
+    // requestee.
     if (requester.equals(requestee) ||
         requester.getState() != State.IN_LOBBY) {
       return;
     }
 
+    DuelRequest duelRequest = new DuelRequest(requester, requestee);
+
     // Automatically reject if the requestee is not in the lobby.
+    // Not necessarily malicious, the requestee could have moved.
     if (requestee.getState() != State.IN_LOBBY) {
-      sendMessage(session, new DuelRequestAnsweredMessage(requestee, false));
+      sendMessage(session, new DuelRequestAnsweredMessage(duelRequest, false));
       return;
     }
 
-    // Create a duel request with "contact info" for the other player.
-    DuelRequest duelRequest = new DuelRequest(requester, session);
-    duelRequests.put(duelRequest.getUuid(), duelRequest);
-    requester.addDuelRequest(duelRequest);
-
     // Send the duel request to the requestee.
     Session requesteeSession = sessions.get(requesteeUuid);
+    if (requesteeSession == null) {
+      logger.log(Level.WARNING,
+          String.format("Requestee `%s' session not found.", requesteeUuid));
+      // TODO: Alert requester.
+      return;
+    }
     sendMessage(requesteeSession, new DuelRequestedMessage(duelRequest));
+
+    // Store the duel request for later.
+    duelRequests.put(duelRequest.getUuid(), duelRequest);
+    requester.addDuelRequest(duelRequest);
   }
 
   /**
@@ -228,15 +222,30 @@ public class IndexEndpoint {
 
     Player requestee = getPlayer(session);
     String duelRequestUuid = message.getUuid();
-    DuelRequest duelRequest = getDuelRequest(duelRequestUuid);
 
-    // Deny if no duel request exists.
+    DuelRequest duelRequest = duelRequests.get(duelRequestUuid);
     if (duelRequest == null) {
+      logger.log(Level.WARNING,
+          String.format("Duel request `%s' not found.", duelRequestUuid));
+      // TODO: Should probably let the requestee know that the
+      // duel request is no longer available. Not necessarily malicious.
+      return;
+    }
+
+    // Deny if the requestee is not the real requestee (malicious).
+    if (!duelRequest.getRequestee().equals(requestee)) {
       return;
     }
 
     Player requester = duelRequest.getRequester();
-    Session requesterSession = duelRequest.getRequesterSession();
+    String requesterUuid = requester.getUuid();
+    Session requesterSession = sessions.get(requesterUuid);
+    if (requesterSession == null) {
+      logger.log(Level.WARNING,
+          String.format("Session for `%s' not found.", requesterUuid));
+      // TODO: Again probably should alert requestee of unavailability.
+      return;
+    }
 
     if (message.isAccept()) {
       logger.log(
@@ -245,7 +254,7 @@ public class IndexEndpoint {
               requestee.getInformationalName(),
               requester.getInformationalName()));
 
-      sendMessage(requesterSession, new DuelRequestAnsweredMessage(requestee,
+      sendMessage(requesterSession, new DuelRequestAnsweredMessage(duelRequest,
           true));
 
       // Drop all other duel requests the participants had before.
@@ -270,11 +279,11 @@ public class IndexEndpoint {
               requestee.getInformationalName(),
               requester.getInformationalName()));
 
-      sendMessage(requesterSession, new DuelRequestAnsweredMessage(requestee,
+      sendMessage(requesterSession, new DuelRequestAnsweredMessage(duelRequest,
           false));
 
       // Drop the duel request that was rejected.
-      duelRequests.remove(duelRequestUuid);
+      duelRequests.remove(duelRequestUuid); // Existence confirmed.
       requester.removeDuelRequest(duelRequest);
     }
   }
@@ -291,20 +300,47 @@ public class IndexEndpoint {
     }
   }
 
-  @OnOpen
-  public void openConnection(Session session) {
-
-    // Create a player so that its UUID can be used for mapping.
-    Player player = new Player();
-    session.getUserProperties().put("player", player);
-    players.put(player.getUuid(), player);
-    sessions.put(player.getUuid(), session);
-
-    logger.log(Level.INFO, "Connection opened.");
-
-    // Ask the player for his name.
+  /**
+   * Asks a client to name his player.
+   * 
+   * @param session
+   */
+  private static void queryPlayerName(Session session) {
+    Player player = getPlayer(session);
+    logger.log(
+        Level.INFO,
+        String.format("Requesting client `%s' for a player name.",
+            player.getUuid()));
     player.setState(State.NAMING);
     sendMessage(session, new QueryPlayerNameMessage());
+  }
+
+  /**
+   * Creates a player object to be associated with the argument session, along
+   * with mappings using the newly-created player's uuid.
+   * 
+   * @param session
+   */
+  private static void createPlayer(Session session) {
+    // Create a player and associate it with this session.
+    Player player = new Player();
+    session.getUserProperties().put("player", player);
+
+    // Use the newly-created player's UUID for mapping.
+    String uuid = player.getUuid();
+    session.getUserProperties().put("uuid", uuid);
+    players.put(uuid, player);
+    sessions.put(uuid, session);
+
+    logger.log(Level.INFO,
+        String.format("Created player for client `%s'.", uuid));
+  }
+
+  @OnOpen
+  public void openConnection(Session session) {
+    logger.log(Level.INFO, "Connection opened.");
+    createPlayer(session);
+    queryPlayerName(session);
   }
 
   /**
@@ -314,37 +350,41 @@ public class IndexEndpoint {
    */
   private static void cleanUpDuelRequests(Player player) {
     for (DuelRequest duelRequest : player.getDuelRequests()) {
-      try {
+      if (duelRequests.containsKey(duelRequest.getUuid())) {
         duelRequests.remove(duelRequest.getUuid());
-      } catch (NullPointerException e) {
       }
     }
   }
 
   /**
-   * Removes all traces of the argument session.
+   * Removes all traces of the argument session, including all references to the
+   * session's player.
    * 
    * @param session
    */
-  private static void cleanUpClient(Session session) {
+  private static void cleanUpSession(Session session) {
     Player player = getPlayer(session);
     cleanUpDuelRequests(player);
-    lobby.removePlayer(player);
+    if (lobby.hasPlayer(player)) {
+      lobby.removePlayer(player);
+    }
     players.remove(player.getUuid());
     sessions.remove(player.getUuid());
   }
 
   @OnClose
   public void closedConnection(Session session) {
-    cleanUpClient(session);
-    logger.log(Level.INFO, "Connection closed.");
+    cleanUpSession(session);
+    logger.log(Level.INFO,
+        String.format("Connection closed with client `%s'.", getUuid(session)));
   }
 
   @OnError
-  public void error(Session session, Throwable t) {
-    cleanUpClient(session);
-    logger.log(Level.INFO, t.toString());
-    logger.log(Level.INFO, "Connection error.");
+  public void error(Session session, Throwable throwable) {
+    cleanUpSession(session);
+    logger.log(Level.INFO,
+        String.format("Connection error with client `%s'.", getUuid(session)));
+    logger.log(Level.INFO, throwable.toString());
   }
 
 }

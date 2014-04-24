@@ -14,22 +14,23 @@ import com.herokuapp.dragoncards.game.Game;
 
 public class Room implements JsonSerializable {
 
-  private final List<Player> players;
   private final String uuid;
   private Game game;
+  private final List<Player> players;
 
   public Room() {
-    this.players = new ArrayList<Player>();
     this.uuid = UUID.randomUUID().toString();
-  }
-
-  public void initializeGame() {
-    this.game = new Game(this.players.toArray(new Player[this.players.size()]));
+    this.players = new ArrayList<Player>();
   }
 
   public void addPlayer(Player player) {
     this.players.add(player);
     player.setState(State.DUELING);
+  }
+
+  public void initializeGame() {
+    Player[] playerArgs = this.players.toArray(new Player[this.players.size()]);
+    this.game = new Game(playerArgs);
   }
 
   public String getUuid() {

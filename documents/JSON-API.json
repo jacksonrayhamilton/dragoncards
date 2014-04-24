@@ -83,8 +83,7 @@
 
 {
   "toClient": "duelRequestAnswered",
-  "player": {}, // Data about the acceptee (or denier).
-  // Actually should probably be a duelRequest uuid but eh.
+  "duelRequest": {}, // DuelRequest
   "accept": false
 }
 

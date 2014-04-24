@@ -52,7 +52,8 @@ public class MessageDecoder implements Decoder.Text<Message> {
 
   @Override
   public boolean willDecode(String message) {
-    // TODO: Do some checking.
+    // TODO: Do hardcore error checking. Add error checkers as static methods
+    // to the classes. Non-well-formed messages cause errors.
     return true;
   }
 

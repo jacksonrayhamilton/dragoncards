@@ -92,7 +92,7 @@ Lobby
 
 Room
 - new instance created for each match that is made
-- has contains 2 players
+- contains 2 players
 - starts up a game between the 2 players
 - could potentially do matches or have spectators
 

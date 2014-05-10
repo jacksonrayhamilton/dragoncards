@@ -1,21 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Dragon Cards!</title>
+  <meta charset="UTF-8">
+  <title>Dragon Cards!</title>
+  <link rel="stylesheet" href="css/lib/normalize.css">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <h1>The Dragons have Woken!</h1>
+  <h2>The Dragons have Woken!</h2>
+
   <select id="toServerSelect">
     <option value="setPlayerName">setPlayerName</option>
     <option value="requestDuel">requestDuel</option>
     <option value="answerDuelRequest">answerDuelRequest</option>
+    <option value="preliminaryAction">preliminaryAction</option>
+    <option value="discardAction">discardAction</option>
+    <option value="battleActions">battleActions</option>
+    <option value="exitRoom">exitRoom</option>
   </select>
   <input id="jsonInput" type="text">
-  <button id="submitButton">Submit</button><br>
-  <canvas id="canvas"></canvas>
-  <script src="js/base64images.js"></script>
+  <button id="submitButton">Submit</button>
+
+  <p id="lastMessage"></p>
+
+  <table class="testingTable">
+    <tr>
+      <th>Set Name</th>
+      <th>Draw</th>
+      <th>Pilfer</th>
+    </tr>
+    <tr>
+      <td>
+        <input type="text" id="setPlayerNameInput" value="a"> <button id="setPlayerNameButton">Submit</button>
+      </td>
+      <td>
+        <button id="drawButton">Draw</button>
+      </td>
+      <td>
+        <button id="pilferButton">Pilfer</button><br>
+        <input type="radio" name="pilfer" value="self" checked>Self</input>
+        <input type="radio" name="pilfer" value="opponent">Opponent</input>
+      </td>
+    </tr>
+  </table>
+
+  <br>
+
+  <table class="testingTable">
+    <tr>
+      <th>Lobby</th>
+      <th>Duel Requests</th>
+      <th>Your Hand</th>
+      <th>Your Discard Pile</th>
+      <th>Opponent's Discard Pile</th>
+    </tr>
+    <tr>
+      <td>
+        <ul id="lobbyList"></ul>
+      </td>
+      <td>
+        <ul id="duelRequestsList"></ul>
+      </td>
+      <td>
+        <ul id="yourHandList"></ul>
+      </td>
+      <td>
+        <ul id="yourDiscardPileList"></ul>
+      </td>
+      <td>
+        <ul id="opponentDiscardPileList"></ul>
+      </td>
+    </tr>
+  </table>
+
+  <script src="js/lib/jquery.js"></script>
+  <script src="js/lib/lodash.js"></script>
+  <script src="js/lib/chance.js"></script>
+  <script src="js/lib/moment.js"></script>
   <script src="js/client.js"></script>
-  <script src="js/canvas.js"></script>
 </body>
 </html>

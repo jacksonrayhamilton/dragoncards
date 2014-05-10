@@ -43,7 +43,7 @@
   "playersLeft": [ "4443", "4442" ]
 }
 
-// Every minute or so sent a userList for a full refresh.
+// Every minute or so send a userList for a full refresh.
 
 // If a game starts, move players to room, record the change
 // temporarily in the lobby.
@@ -64,13 +64,14 @@
   "toClient": "duelRequested",
   "duelRequest": {
     "uuid": "PPPP" // UUID of the request.
-    "requester": {} // player
+    "requester": {}, // player
+    "requestee": {} // requested player
   }
 }
 
 // Server creates a DuelRequest object that can be accessed via
 // its UUID. The DuelRequest contains a reference to the
-// requester and the requester's session.
+// requester and requestee.
 // Requestee may respond with either an accept or a decline.
 
 {
@@ -98,6 +99,7 @@
     "id": "XXXX"
   },
   "game": {
+    "players": [] // players. order matters.
     "turnPlayer": "6666", // randomly-chosen
     "deck": {
       "size": 63
@@ -145,7 +147,7 @@
 
 {
   "toClient": "opponentPilfer", // or opponentDraw
-  "target": 0 // if pilfering the target discard pile
+  "target": "self" // or "opponent"
 }
 
 // Deliver drawn cards to the player drawing.
@@ -153,23 +155,43 @@
 {
   "toClient": "draw",
   "card": {
-    "attribute": "water",
+    "element": "water",
     "level": 4
   }
 }
 
-// Or if pilfering, you don't need to send a message, the client
+// Or if pilfering, you DON'T need to send a message, the client
 // already knows what to get.
 
-// NOT NEEDED
+// <NOT NEEDED>
 {
   "toClient": "pilfer",
   "card": {
-    "attribute": "fire",
+    "element": "fire",
     "level": 2
   }
 }
-// NOT NEEDED
+// </NOT NEEDED>
+
+// After drawing or pilfering, the turn player must discard a card in order to
+// return to 6 cards in hand.
+{
+  "toClient": "queryDiscardAction"
+}
+
+// The player responds with the type of card he wishes to discard. Check that he
+// has such a card.
+{
+  "toServer": "discardAction",
+  "element": "fire",
+  "level": 1
+}
+
+// Relay the discarded card to the opponent.
+{
+  "toClient": "opponentDiscard"
+  "card": {}
+}
 
 // Or if summoning, the server checks that the player can summon,
 // and then relays to the opponent what was summoned.
@@ -180,8 +202,8 @@
 }
 
 // Once that player has summoned the server will draw unlimited
-// cards until the losing player has a set made. If the deck
-// runs out first then he loses. Immediately after he gets his set,
+// cards until the losing player has his sets made. If the deck
+// runs out first then he loses. Immediately after he gets his sets,
 // then that player summons too. Same message as above is sent.
 // Then, enter battle state.
 
@@ -208,7 +230,19 @@
 // The clients wait while their attacks pend.
 // Once the server receives both, it determines the current state,
 // relays the opponent action and also if the game is over.
-// The client can infer the state of the game based on what happened.
+
+{
+  "toClient": "opponentBattleActions",
+  "actions": []
+}
+
+// The client can infer the state of the game based on what happened. To make things a little easier a gameover message will be sent.
+
+{
+  "toClient": "gameover",
+  "winner": {}, // player
+  "draw": true // if there was a draw
+}
 
 // Once the battle is over a victory message will be shown clientside.
 // Server-side the player is still in the room until an exit is sent.
@@ -219,3 +253,7 @@
 
 // Once this message is received the server will send the user back to
 // to the lobby with a new list of players.
+
+{
+  "toClient": "opponentDisconnect"
+}

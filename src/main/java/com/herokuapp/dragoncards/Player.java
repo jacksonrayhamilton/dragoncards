@@ -18,6 +18,7 @@ public class Player implements JsonSerializable {
   private final String uuid;
   private State state;
   private List<DuelRequest> duelRequests;
+  private String roomUuid;
 
   public Player(String name, State state) {
     this.name = name;
@@ -61,7 +62,7 @@ public class Player implements JsonSerializable {
   }
 
   public String getInformationalName() {
-    return "\"" + this.name + "\" (" + this.uuid + ")";
+    return "`" + this.name + "' (`" + this.uuid + "')";
   }
 
   public State getState() {
@@ -94,5 +95,21 @@ public class Player implements JsonSerializable {
 
   public boolean removeDuelRequest(DuelRequest duelRequest) {
     return this.duelRequests.remove(duelRequest);
+  }
+
+  public void setRoomUuid(String uuid) {
+    this.roomUuid = uuid;
+  }
+
+  public String getRoomUuid() {
+    return this.roomUuid;
+  }
+
+  public void leaveRoom() {
+    this.roomUuid = null;
+  }
+
+  public boolean stateIs(State state) {
+    return this.state == state;
   }
 }

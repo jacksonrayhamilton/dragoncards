@@ -14,20 +14,17 @@ public class PreliminaryActionMessage extends Message {
 
   public PreliminaryActionMessage(JsonObject json) {
     String action = json.getString("action");
-    switch (action) {
-      case "draw":
-      case "pilfer":
-        this.action = CollectAction.valueOf(action.toUpperCase());
-        break;
-      case "summon":
-        this.action = SummonAction.valueOf(action.toUpperCase());
-        break;
-      default:
-        this.action = null;
-        break;
+
+    if (action.equals("draw") || action.equals("pilfer")) {
+      this.action = CollectAction.valueOf(action.toUpperCase());
+    } else if (action.equals("summon")) {
+      this.action = SummonAction.valueOf(action.toUpperCase());
+    } else {
+      this.action = null;
     }
-    String target = json.getString("action");
-    if (target != null) {
+
+    if (action.equals("pilfer")) {
+      String target = json.getString("target");
       this.target = ActionTarget.valueOf(target.toUpperCase());
     } else {
       this.target = null;

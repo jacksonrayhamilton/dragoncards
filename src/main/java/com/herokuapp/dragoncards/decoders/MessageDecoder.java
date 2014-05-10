@@ -12,6 +12,7 @@ import javax.websocket.EndpointConfig;
 import com.herokuapp.dragoncards.messages.Message;
 import com.herokuapp.dragoncards.messages.client.AnswerDuelRequestMessage;
 import com.herokuapp.dragoncards.messages.client.BattleActionsMessage;
+import com.herokuapp.dragoncards.messages.client.DiscardActionMessage;
 import com.herokuapp.dragoncards.messages.client.ExitRoomMessage;
 import com.herokuapp.dragoncards.messages.client.PreliminaryActionMessage;
 import com.herokuapp.dragoncards.messages.client.RequestDuelMessage;
@@ -41,6 +42,8 @@ public class MessageDecoder implements Decoder.Text<Message> {
         return new AnswerDuelRequestMessage(json);
       case "preliminaryAction":
         return new PreliminaryActionMessage(json);
+      case "discardAction":
+        return new DiscardActionMessage(json);
       case "battleActions":
         return new BattleActionsMessage(json);
       case "exitRoom":

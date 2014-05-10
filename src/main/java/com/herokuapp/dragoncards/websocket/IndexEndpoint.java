@@ -1,5 +1,6 @@
 package com.herokuapp.dragoncards.websocket;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -21,24 +22,52 @@ import com.herokuapp.dragoncards.encoders.CreatePlayerMessageEncoder;
 import com.herokuapp.dragoncards.encoders.DrawMessageEncoder;
 import com.herokuapp.dragoncards.encoders.DuelRequestAnsweredMessageEncoder;
 import com.herokuapp.dragoncards.encoders.DuelRequestedMessageEncoder;
+import com.herokuapp.dragoncards.encoders.GameoverMessageEncoder;
 import com.herokuapp.dragoncards.encoders.MovePlayerToLobbyMessageEncoder;
 import com.herokuapp.dragoncards.encoders.MovePlayerToRoomMessageEncoder;
+import com.herokuapp.dragoncards.encoders.OpponentBattleActionsMessageEncoder;
+import com.herokuapp.dragoncards.encoders.OpponentDiscardMessageEncoder;
+import com.herokuapp.dragoncards.encoders.OpponentDisconnectMessageEncoder;
 import com.herokuapp.dragoncards.encoders.OpponentDrawMessageEncoder;
 import com.herokuapp.dragoncards.encoders.OpponentPilferMessageEncoder;
 import com.herokuapp.dragoncards.encoders.OpponentSummonMessageEncoder;
 import com.herokuapp.dragoncards.encoders.QueryBattleActionsMessageEncoder;
+import com.herokuapp.dragoncards.encoders.QueryDiscardActionMessageEncoder;
 import com.herokuapp.dragoncards.encoders.QueryPlayerNameMessageEncoder;
 import com.herokuapp.dragoncards.encoders.QueryPreliminaryActionMessageEncoder;
 import com.herokuapp.dragoncards.encoders.UpdateLobbyMessageEncoder;
+import com.herokuapp.dragoncards.game.ActionTarget;
+import com.herokuapp.dragoncards.game.BattleAction;
+import com.herokuapp.dragoncards.game.Card;
+import com.herokuapp.dragoncards.game.CollectAction;
+import com.herokuapp.dragoncards.game.Element;
+import com.herokuapp.dragoncards.game.Game;
+import com.herokuapp.dragoncards.game.PreliminaryAction;
+import com.herokuapp.dragoncards.game.SummonAction;
 import com.herokuapp.dragoncards.messages.Message;
 import com.herokuapp.dragoncards.messages.client.AnswerDuelRequestMessage;
+import com.herokuapp.dragoncards.messages.client.BattleActionsMessage;
+import com.herokuapp.dragoncards.messages.client.DiscardActionMessage;
+import com.herokuapp.dragoncards.messages.client.ExitRoomMessage;
+import com.herokuapp.dragoncards.messages.client.PreliminaryActionMessage;
 import com.herokuapp.dragoncards.messages.client.RequestDuelMessage;
 import com.herokuapp.dragoncards.messages.client.SetPlayerNameMessage;
 import com.herokuapp.dragoncards.messages.server.CreatePlayerMessage;
+import com.herokuapp.dragoncards.messages.server.DrawMessage;
 import com.herokuapp.dragoncards.messages.server.DuelRequestAnsweredMessage;
 import com.herokuapp.dragoncards.messages.server.DuelRequestedMessage;
+import com.herokuapp.dragoncards.messages.server.GameoverMessage;
 import com.herokuapp.dragoncards.messages.server.MovePlayerToLobbyMessage;
+import com.herokuapp.dragoncards.messages.server.MovePlayerToRoomMessage;
+import com.herokuapp.dragoncards.messages.server.OpponentBattleActionsMessage;
+import com.herokuapp.dragoncards.messages.server.OpponentDiscardMessage;
+import com.herokuapp.dragoncards.messages.server.OpponentDrawMessage;
+import com.herokuapp.dragoncards.messages.server.OpponentPilferMessage;
+import com.herokuapp.dragoncards.messages.server.OpponentSummonMessage;
+import com.herokuapp.dragoncards.messages.server.QueryBattleActionsMessage;
+import com.herokuapp.dragoncards.messages.server.QueryDiscardActionMessage;
 import com.herokuapp.dragoncards.messages.server.QueryPlayerNameMessage;
+import com.herokuapp.dragoncards.messages.server.QueryPreliminaryActionMessage;
 
 @ServerEndpoint(
     value = "/index",
@@ -47,12 +76,17 @@ import com.herokuapp.dragoncards.messages.server.QueryPlayerNameMessage;
         DrawMessageEncoder.class,
         DuelRequestAnsweredMessageEncoder.class,
         DuelRequestedMessageEncoder.class,
+        GameoverMessageEncoder.class,
         MovePlayerToLobbyMessageEncoder.class,
         MovePlayerToRoomMessageEncoder.class,
+        OpponentBattleActionsMessageEncoder.class,
+        OpponentDiscardMessageEncoder.class,
+        OpponentDisconnectMessageEncoder.class,
         OpponentDrawMessageEncoder.class,
         OpponentPilferMessageEncoder.class,
         OpponentSummonMessageEncoder.class,
         QueryBattleActionsMessageEncoder.class,
+        QueryDiscardActionMessageEncoder.class,
         QueryPlayerNameMessageEncoder.class,
         QueryPreliminaryActionMessageEncoder.class,
         UpdateLobbyMessageEncoder.class
@@ -73,6 +107,11 @@ public class IndexEndpoint {
    * Player UUID to player mapping.
    */
   private static Map<String, Player> players = new ConcurrentHashMap<>();
+
+  /**
+   * Room UUID to room mapping.
+   */
+  private static Map<String, Room> rooms = new ConcurrentHashMap<>();
 
   /**
    * Duel request UUID to duel request mapping.
@@ -102,7 +141,7 @@ public class IndexEndpoint {
   }
 
   /**
-   * Sends an asyncronous JSON message to a a client.
+   * Sends an asyncronous JSON message to a client.
    * 
    * @param session
    *          Session data for the client.
@@ -114,9 +153,13 @@ public class IndexEndpoint {
     return session.getAsyncRemote().sendObject(message);
   }
 
+  private static boolean roomExists(String uuid) {
+    return uuid != null && rooms.containsKey(uuid);
+  }
+
   /**
-   * Sets a player's name and adds him to the lobby. Poorly named method. Should
-   * only be called once.
+   * Sets a player's name and adds him to the lobby. Poorly named method because
+   * it has side effects. Should only be called once.
    * 
    * @param session
    * @param message
@@ -173,21 +216,20 @@ public class IndexEndpoint {
       return;
     }
 
+    // Deny if requester is self or not in lobby (malicious).
+    // TODO: Make it so you can't spam more than one DuelRequest to the same
+    // requestee.
+    if (requester.equals(requestee) || requester.getState() != State.IN_LOBBY) {
+      return;
+    }
+
+    DuelRequest duelRequest = new DuelRequest(requester, requestee);
+
     logger.log(
         Level.INFO,
         String.format("%s requested a duel with %s.",
             requester.getInformationalName(),
             requestee.getInformationalName()));
-
-    // Deny if requester is self or not in lobby (malicious).
-    // TODO: Make it so you can't spam more than one DuelRequest to the same
-    // requestee.
-    if (requester.equals(requestee) ||
-        requester.getState() != State.IN_LOBBY) {
-      return;
-    }
-
-    DuelRequest duelRequest = new DuelRequest(requester, requestee);
 
     // Automatically reject if the requestee is not in the lobby.
     // Not necessarily malicious, the requestee could have moved.
@@ -212,6 +254,21 @@ public class IndexEndpoint {
   }
 
   /**
+   * Requests a player to make a preliminary action.
+   * 
+   * @param session
+   */
+  private static void queryPreliminaryAction(Session session) {
+    Player player = getPlayer(session);
+    logger.log(
+        Level.INFO,
+        String.format("Requesting player %s for a preliminary action.",
+            player.getInformationalName()));
+    player.setState(State.CHOOSING_PRELIMINARY_ACTION);
+    sendMessage(session, new QueryPreliminaryActionMessage());
+  }
+
+  /**
    * Handles users' attempts to answer requests from other players to duel.
    * 
    * @param session
@@ -219,6 +276,9 @@ public class IndexEndpoint {
    */
   private void onAnswerDuelRequestMessage(Session session,
       AnswerDuelRequestMessage message) {
+
+    // It is implied that the requestee's session still exists because he
+    // intiated this message.
 
     Player requestee = getPlayer(session);
     String duelRequestUuid = message.getUuid();
@@ -262,16 +322,32 @@ public class IndexEndpoint {
       cleanUpDuelRequests(requestee);
       requester.clearDuelRequests();
       requestee.clearDuelRequests();
-      // lobby.removePlayer(requester);
-      // lobby.removePlayer(requestee);
+      lobby.removePlayer(requester);
+      lobby.removePlayer(requestee);
 
-      // Room room = new Room();
-      // room.addPlayer(requester);
-      // room.addPlayer(requestee);
-      // room.initializeGame();
+      Room room = new Room();
+      room.addPlayer(requester);
+      room.addPlayer(requestee);
+      room.initializeGame();
 
-      // TODO: Add room to a HashMap of rooms.
-      // TODO: Send message about gamestate.
+      rooms.put(room.getUuid(), room);
+
+      logger.log(
+          Level.INFO,
+          String.format("Room `%s` created for a duel between %s and %s.",
+              room.getUuid(),
+              requestee.getInformationalName(),
+              requester.getInformationalName()));
+
+      // Alert both clients that they should move to the new room.
+      sendMessage(requesterSession,
+          new MovePlayerToRoomMessage(requester, room));
+      sendMessage(session, new MovePlayerToRoomMessage(requestee, room));
+
+      // Ask for the first preliminary action from the turn player.
+      room.getNonTurnPlayer().setState(State.WAITING_FOR_OPPONENT);
+      queryPreliminaryAction(sessions.get(room.getTurnPlayer().getUuid()));
+
     } else {
       logger.log(
           Level.INFO,
@@ -288,6 +364,213 @@ public class IndexEndpoint {
     }
   }
 
+  private static void queryDiscardAction(Session session) {
+    Player player = getPlayer(session);
+    logger.log(
+        Level.INFO,
+        String.format("Requesting player %s for a discard action.",
+            player.getInformationalName()));
+    player.setState(State.CHOOSING_DISCARD_ACTION);
+    sendMessage(session, new QueryDiscardActionMessage());
+  }
+
+  private static void queryBattleActions(Session session) {
+    Player player = getPlayer(session);
+    logger.log(
+        Level.INFO,
+        String.format("Requesting player %s for battle actions.",
+            player.getInformationalName()));
+    player.setState(State.CHOOSING_BATTLE_ACTIONS);
+    sendMessage(session, new QueryBattleActionsMessage());
+  }
+
+  private static void issueGameover(Player winner, Session... sessions) {
+    GameoverMessage gameoverMessage = new GameoverMessage(winner);
+    for (Session session : sessions) {
+      sendMessage(session, gameoverMessage);
+    }
+    // TODO: Cleanup after the game.
+  }
+
+  /**
+   * Handles player input on a "preliminary action" he is taking in-game. (Can
+   * be drawing, pilfering, or summoning.)
+   * 
+   * @param session
+   * @param message
+   */
+  private void onPreliminaryActionMessage(Session session,
+      PreliminaryActionMessage message) {
+
+    Player player = getPlayer(session);
+
+    // Deny if the player is not making a preliminary action (malicious).
+    if (!player.stateIs(State.CHOOSING_PRELIMINARY_ACTION)) {
+      return;
+    }
+
+    // TODO: Make sure opponent is still connected. Probably as soon as he
+    // leaves kill the room and send a gameover message to other player.
+
+    String roomUuid = player.getRoomUuid();
+
+    // Deny if player is not in a room or his room does not exist.
+    if (!roomExists(roomUuid)) {
+      return;
+    }
+
+    Room room = rooms.get(roomUuid);
+
+    // Deny if the player is not the turn player (malicious).
+    if (!player.equals(room.getTurnPlayer())) {
+      return;
+    }
+
+    Player opponent = room.getNonTurnPlayer();
+    Session opponentSession = sessions.get(opponent.getUuid());
+
+    PreliminaryAction action = message.getAction();
+    Game game = room.getGame();
+
+    if (action instanceof CollectAction) {
+      if (action.equals(CollectAction.DRAW)) {
+        Card card = game.receiveCollectAction((CollectAction) action);
+        sendMessage(session, new DrawMessage(card));
+        sendMessage(opponentSession, new OpponentDrawMessage());
+      } else if (action.equals(CollectAction.PILFER)) {
+        // TODO: Check that there is actually a card to pilfer. If not, deny.
+        ActionTarget actionTarget = message.getTarget();
+        int playerIndex =
+            game.actionTargetToPlayerIndex(actionTarget, player);
+        game.receiveCollectAction((CollectAction) action, playerIndex);
+        sendMessage(opponentSession, new OpponentPilferMessage(actionTarget));
+      }
+
+      // Now that the turn player has collected, he must discard.
+      queryDiscardAction(session);
+
+    } else if (action instanceof SummonAction) {
+      if (action.equals(SummonAction.SUMMON)) {
+        // TODO: Check that summoning conditions are correct. If not, deny.
+        game.receiveSummonAction();
+        sendMessage(opponentSession,
+            new OpponentSummonMessage(game.getDragons(player)));
+        game.nextTurn();
+        game.obligatorySummon();
+        int winner = game.getWinner();
+        if (winner >= 0) {
+          issueGameover(game.getPlayerByIndex(winner), session, opponentSession);
+        } else if (winner == -1) {
+          sendMessage(session,
+              new OpponentSummonMessage(game.getDragons(opponent)));
+          game.beginBattle();
+          queryBattleActions(session);
+          queryBattleActions(opponentSession);
+        }
+      }
+    }
+  }
+
+  private void onDiscardActionMessage(Session session,
+      DiscardActionMessage message) {
+
+    Player player = getPlayer(session);
+
+    // Deny if the player is not making a discard action (malicious).
+    if (!player.stateIs(State.CHOOSING_DISCARD_ACTION)) {
+      return;
+    }
+
+    String roomUuid = player.getRoomUuid();
+
+    // Deny if player is not in a room or his room does not exist.
+    if (!roomExists(roomUuid)) {
+      return;
+    }
+
+    Room room = rooms.get(roomUuid);
+
+    // Deny if the player is not the turn player (malicious).
+    if (!player.equals(room.getTurnPlayer())) {
+      return;
+    }
+
+    Element element = message.getElement();
+    int level = message.getLevel();
+    Game game = room.getGame();
+
+    Card card = game.receiveDiscardAction(element, level);
+
+    Player opponent = room.getNonTurnPlayer();
+    Session opponentSession = sessions.get(opponent.getUuid());
+
+    // Alert the opponent of the card that the turn player dicarded.
+    sendMessage(opponentSession, new OpponentDiscardMessage(card));
+
+    // Advance to the next turn.
+    player.setState(State.WAITING_FOR_OPPONENT);
+    game.nextTurn();
+    queryPreliminaryAction(opponentSession);
+  }
+
+  private void onBattleActionsMessage(Session session,
+      BattleActionsMessage message) {
+
+    Player player = getPlayer(session);
+
+    // Deny if the player is not making discard actions (malicious).
+    if (!player.stateIs(State.CHOOSING_BATTLE_ACTIONS)) {
+      return;
+    }
+
+    player.setState(State.WAITING_FOR_OPPONENT);
+
+    String roomUuid = player.getRoomUuid();
+
+    // Deny if player is not in a room or his room does not exist.
+    if (!roomExists(roomUuid)) {
+      return;
+    }
+
+    Room room = rooms.get(roomUuid);
+    Game game = room.getGame();
+    Player opponent = room.getNonTurnPlayer();
+    Session opponentSession = sessions.get(opponent.getUuid());
+
+    game.addBattleActions(message.getActions());
+
+    if (!game.isReadyToBattle()) {
+      return;
+    }
+
+    List<BattleAction> actions = game.getBattleActions();
+
+    // The first 2 actions were made by the current submitter's opponent.
+    sendMessage(session,
+        new OpponentBattleActionsMessage(actions.subList(0, 2)));
+
+    // The rest of the actions, just made in this method invokation, were
+    // made by the submitter and must be relayed to his opponent.
+    sendMessage(opponentSession,
+        new OpponentBattleActionsMessage(actions.subList(2, 4)));
+
+    game.battle();
+
+    int winner = game.getWinner();
+    if (game.getWinner() >= 0) {
+      issueGameover(game.getPlayerByIndex(winner), session, opponentSession);
+    } else if (game.getWinner() == -2) {
+      issueGameover(null, session, opponentSession);
+    } else if (winner == -1) {
+      queryBattleActions(session);
+      queryBattleActions(opponentSession);
+    }
+  }
+
+  private void onExitRoomMessage(Session session, ExitRoomMessage message) {
+    // TODO: Implement this.
+  }
+
   @OnMessage
   public void onMessage(Session session, Message message) {
     if (message instanceof SetPlayerNameMessage) {
@@ -297,6 +580,16 @@ public class IndexEndpoint {
     } else if (message instanceof AnswerDuelRequestMessage) {
       this.onAnswerDuelRequestMessage(session,
           (AnswerDuelRequestMessage) message);
+    } else if (message instanceof PreliminaryActionMessage) {
+      this.onPreliminaryActionMessage(session,
+          (PreliminaryActionMessage) message);
+    } else if (message instanceof DiscardActionMessage) {
+      this.onDiscardActionMessage(session,
+          (DiscardActionMessage) message);
+    } else if (message instanceof BattleActionsMessage) {
+      this.onBattleActionsMessage(session, (BattleActionsMessage) message);
+    } else if (message instanceof ExitRoomMessage) {
+      this.onExitRoomMessage(session, (ExitRoomMessage) message);
     }
   }
 

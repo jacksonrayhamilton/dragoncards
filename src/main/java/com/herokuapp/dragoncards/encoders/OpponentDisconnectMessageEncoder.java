@@ -5,10 +5,10 @@ import javax.websocket.EncodeException;
 import javax.websocket.Encoder;
 import javax.websocket.EndpointConfig;
 
-import com.herokuapp.dragoncards.messages.server.OpponentPilferMessage;
+import com.herokuapp.dragoncards.messages.server.OpponentDisconnectMessage;
 
-public class OpponentPilferMessageEncoder implements
-    Encoder.Text<OpponentPilferMessage> {
+public class OpponentDisconnectMessageEncoder implements
+    Encoder.Text<OpponentDisconnectMessage> {
 
   @Override
   public void destroy() {
@@ -19,10 +19,10 @@ public class OpponentPilferMessageEncoder implements
   }
 
   @Override
-  public String encode(OpponentPilferMessage message) throws EncodeException {
+  public String encode(OpponentDisconnectMessage message)
+      throws EncodeException {
     return Json.createObjectBuilder()
-        .add("toClient", "opponentPilfer")
-        .add("target", message.getTarget().toString())
+        .add("toClient", "opponentDisconnect")
         .build()
         .toString();
   }

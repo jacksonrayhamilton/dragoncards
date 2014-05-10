@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.json.Json;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonValue;
 
 import com.herokuapp.dragoncards.JsonSerializable;
@@ -50,7 +51,14 @@ public class Game implements JsonSerializable {
 
   private List<BattleAction> battleActions;
 
-  public Game(Player... players) {
+  /**
+   * Constructs a game with a specific turn player (probably set by
+   * `RandomNumberGenerator.inclusiveRange(0, players.length - 1)`).
+   * 
+   * @param players
+   * @param turnPlayer
+   */
+  public Game(Player[] players, int turnPlayer) {
     this.players = players;
 
     this.playerCount = this.players.length;
@@ -65,9 +73,7 @@ public class Game implements JsonSerializable {
     this.battleHasBegun = false;
     this.battleActions = new ArrayList<>();
     this.deck = new Deck();
-    this.turnPlayer = 0; // Should probably be set by
-                         // RandomNumberGenerator.inclusiveRange(0,
-                         // this.players.length - 1);
+    this.turnPlayer = turnPlayer;
 
     // Each player draws 6 cards.
     for (int i = 0; i < HAND_SIZE_LIMIT * this.playerCount; i++) {
@@ -76,8 +82,49 @@ public class Game implements JsonSerializable {
     }
   }
 
+  /**
+   * Constructs a game with the first player being player 0. (Deterministic.)
+   * 
+   * @param players
+   */
+  public Game(Player... players) {
+    this(players, 0);
+  }
+
   public int getPlayerIndex(Player player) {
     return this.playerIndexes.get(player);
+  }
+
+  public Player getPlayerByIndex(int index) {
+    return this.players[index];
+  }
+
+  /**
+   * Translates ActionTarget.SELF or ActionTarget.OPPONENT to the correct player
+   * index.
+   * 
+   * @param target
+   * @param player
+   * @return
+   */
+  public int actionTargetToPlayerIndex(ActionTarget target, Player player) {
+    int index = this.getPlayerIndex(player);
+    if (target.equals(ActionTarget.SELF)) {
+      return index;
+    } else if (target.equals(ActionTarget.OPPONENT)) {
+      return index == 0 ? 1 : 0;
+    }
+    return -1; // Should never happen.
+  }
+
+  public ActionTarget playerIndexToActionTarget(int index, Player player) {
+    Player indexedPlayer = this.players[index];
+    if (indexedPlayer.equals(player)) {
+      return ActionTarget.SELF;
+    } else {
+      return ActionTarget.OPPONENT;
+      // TODO: Update the message class
+    }
   }
 
   public Hand getHand(int player) {
@@ -90,6 +137,10 @@ public class Game implements JsonSerializable {
 
   public DiscardPile getDiscardPile(int player) {
     return this.playerGameData[player].discardPile;
+  }
+
+  public List<Dragon> getDragons(Player player) {
+    return this.getDragons(this.getPlayerIndex(player));
   }
 
   public List<Dragon> getDragons(int player) {
@@ -133,6 +184,10 @@ public class Game implements JsonSerializable {
 
   public int getTurnPlayer() {
     return this.turnPlayer;
+  }
+
+  public int getNonTurnPlayer() {
+    return this.turnPlayer == 0 ? 1 : 0;
   }
 
   /**
@@ -187,16 +242,19 @@ public class Game implements JsonSerializable {
 
   }
 
-  public void receiveCollectAction(CollectAction action, int... target) {
+  public Card receiveCollectAction(CollectAction action, int... target) {
+    Card card = null; // Should never be null.
     if (action == CollectAction.DRAW) {
-      this.getHand(this.turnPlayer).add(this.deck.draw());
+      card = this.deck.draw();
+      this.getHand(this.turnPlayer).add(card);
     } else if (action == CollectAction.PILFER) {
-      this.getHand(this.turnPlayer).add(this.pilfer(target[0]));
+      card = this.pilfer(target[0]);
+      this.getHand(this.turnPlayer).add(card);
     }
+    return card;
   }
 
-  // The conditions for summoning should be checked ahead-of-time, of course.
-  public void receiveSummonAction() {
+  public void turnPlayerSummon() {
     Hand hand = this.getHand(this.turnPlayer);
     ArrayList<Dragon> summonedDragons = new ArrayList<>(2);
 
@@ -210,21 +268,41 @@ public class Game implements JsonSerializable {
       }
     }
 
-    this.setDragons(this.turnPlayer, summonedDragons);
-    this.makeReadyToBattle(this.turnPlayer);
+    if (summonedDragons.size() == DRAGONS_PER_PLAYER) {
+      this.setDragons(this.turnPlayer, summonedDragons);
+      this.makeReadyToBattle(this.turnPlayer);
+    }
+  }
+
+  // The conditions for summoning should be checked ahead-of-time, of course.
+  public void receiveSummonAction() {
+    this.turnPlayerSummon();
+  }
+
+  /**
+   * Draws the remainder of the deck into the turn player's hand in an attempt
+   * to get him a set of dragons.
+   */
+  public void obligatorySummon() {
+    Hand hand = this.getHand(this.turnPlayer);
+    while (!this.deck.isEmpty()) {
+      hand.add(this.deck.draw());
+    }
+    this.turnPlayerSummon();
   }
 
   public void queryDiscardAction() {
 
   }
 
-  public void receiveDiscardAction(Card card) {
-    this.receiveDiscardAction(card.getElement(), card.getLevel());
+  public Card receiveDiscardAction(Card card) {
+    return this.receiveDiscardAction(card.getElement(), card.getLevel());
   }
 
-  public void receiveDiscardAction(Element element, int level) {
+  public Card receiveDiscardAction(Element element, int level) {
     Card discardedCard = this.getHand(this.turnPlayer).discard(element, level);
     this.getDiscardPile(this.turnPlayer).add(discardedCard);
+    return discardedCard;
   }
 
   // TODO: Maybe should be some hook to call this automatically once both
@@ -258,6 +336,10 @@ public class Game implements JsonSerializable {
 
   public void counterWithDragon(int player, int dragon) {
     this.getDragons(player).get(dragon).startCountering();
+  }
+
+  public boolean isReadyToBattle() {
+    return this.battleActions.size() >= this.playerCount * DRAGONS_PER_PLAYER;
   }
 
   public void battle() {
@@ -315,8 +397,15 @@ public class Game implements JsonSerializable {
 
   @Override
   public JsonValue toJson() {
+    JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+
+    for (Player player : this.players) {
+      arrayBuilder.add(player.toJson());
+    }
+
     return Json.createObjectBuilder()
-        .add("turnPlayer", this.turnPlayer)
+        .add("players", arrayBuilder)
+        .add("turnPlayer", this.players[this.turnPlayer].toJson())
         .add("deck", this.deck.toJson())
         .build();
   }

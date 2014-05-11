@@ -254,27 +254,84 @@ public class Game implements JsonSerializable {
     return card;
   }
 
-  public void turnPlayerSummon() {
+  /**
+   * @return Whether or not the turn player has 2 sets (and therefore can
+   *         summon).
+   */
+  public boolean canSummon() {
+    int sets = 0;
     Hand hand = this.getHand(this.turnPlayer);
-    ArrayList<Dragon> summonedDragons = new ArrayList<>(2);
+    List<Card> unsummonableCards = new ArrayList<>(hand.size());
 
-    for (int i = 0, handSize = hand.size(); i < handSize; i++) {
+    for (int i = 0, size = hand.size(); i < size; i++) {
       Card card = hand.get(i);
-      if (summonedDragons.isEmpty() || !summonedDragons.contains(card)) {
-        summonedDragons.add(new Dragon(card));
-        if (summonedDragons.size() == DRAGONS_PER_PLAYER) {
-          break;
+
+      if (unsummonableCards.contains(card)) {
+        continue;
+      }
+
+      int count = 0;
+      for (int j = i + 1; j < size; j++) {
+        Card otherCard = hand.get(j);
+        if (card.equals(otherCard)) {
+          count++;
+          if (count == 3) {
+            sets++;
+            break;
+          }
         }
+      }
+
+      if (count < 3) {
+        unsummonableCards.add(card);
       }
     }
 
-    if (summonedDragons.size() == DRAGONS_PER_PLAYER) {
-      this.setDragons(this.turnPlayer, summonedDragons);
-      this.makeReadyToBattle(this.turnPlayer);
-    }
+    return sets == 2;
   }
 
-  // The conditions for summoning should be checked ahead-of-time, of course.
+  /**
+   * Summons the turn player's dragons. Assumes that the hand has already been
+   * checked for 2 sets of dragons. The the first 2 sets that are found are
+   * summoned.
+   */
+  public void turnPlayerSummon() {
+    Hand hand = this.getHand(this.turnPlayer);
+    List<Card> unsummonableCards = new ArrayList<>(hand.size());
+    ArrayList<Dragon> summonedDragons = new ArrayList<>(2);
+
+    for (int i = 0, size = hand.size(); i < size; i++) {
+      Card card = hand.get(i);
+
+      if (unsummonableCards.contains(card)) {
+        continue;
+      }
+
+      int count = 1;
+      for (int j = i + 1; j < size; j++) {
+        Card otherCard = hand.get(j);
+        if (card.equals(otherCard)) {
+          count++;
+          if (count == 3) {
+            summonedDragons.add(new Dragon(card));
+          }
+        }
+      }
+
+      // Don't check the same card again.
+      unsummonableCards.add(card);
+
+      if (summonedDragons.size() == DRAGONS_PER_PLAYER) {
+        // End early if 2 dragons were found.
+        break;
+      }
+    }
+
+    this.setDragons(this.turnPlayer, summonedDragons);
+    this.makeReadyToBattle(this.turnPlayer);
+  }
+
+  // The conditions for summoning should be checked ahead-of-time.
   public void receiveSummonAction() {
     this.turnPlayerSummon();
   }
@@ -285,10 +342,12 @@ public class Game implements JsonSerializable {
    */
   public void obligatorySummon() {
     Hand hand = this.getHand(this.turnPlayer);
-    while (!this.deck.isEmpty()) {
+    while (!this.canSummon() && !this.deck.isEmpty()) {
       hand.add(this.deck.draw());
     }
-    this.turnPlayerSummon();
+    if (this.canSummon()) {
+      this.turnPlayerSummon();
+    }
   }
 
   public void queryDiscardAction() {

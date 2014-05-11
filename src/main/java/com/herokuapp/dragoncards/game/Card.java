@@ -20,13 +20,14 @@ public class Card implements JsonSerializable {
   }
 
   public Element getElement() {
-    return element;
+    return this.element;
   }
 
   public int getLevel() {
-    return level;
+    return this.level;
   }
 
+  @Override
   public String toString() {
     return "Card: {\n"
         + "  element: " + this.element + "\n"
@@ -34,8 +35,9 @@ public class Card implements JsonSerializable {
         + "}";
   }
 
-  public boolean equals(Card other) {
-    return (this.element == other.getElement() && this.level == other.getLevel());
+  @Override
+  public boolean equals(Object other) {
+    return (this.getElement() == ((Card) other).getElement() && this.getLevel() == ((Card) other).getLevel());
   }
 
   @Override

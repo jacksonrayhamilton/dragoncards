@@ -2,6 +2,13 @@ body {
     padding: 5px;
 }
 
+#lastMessage {
+    display: inline-block;
+    margin: 1em 0;
+    padding: 10px;
+    border-radius: 3px;
+}
+
 table td,
 table th {
     padding: 5px;
@@ -11,4 +18,41 @@ table th {
 .testingTable td,
 .testingTable th {
     border: 1px solid #000;
+    text-align: center;
+}
+
+.testingTable ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.yourHandTd a {
+    text-decoration: none;
+}
+
+.element {
+    vertical-align: middle;
+    font-weight: bold;
+    font-size: 1.5em;
+}
+
+.wood {
+    color: brown;
+}
+
+.fire {
+    color: crimson;
+}
+
+.earth {
+    color: olivedrab;
+}
+
+.metal {
+    color: grey;
+}
+
+.water {
+    color: steelblue;
 }

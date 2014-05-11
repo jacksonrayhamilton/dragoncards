@@ -74,10 +74,12 @@ public class Dragon extends Card implements JsonSerializable {
     this.countering = false;
   }
 
-  public boolean equals(Dragon other) {
-    return (this.element == other.getElement() && this.level == other.getLevel());
+  @Override
+  public boolean equals(Object other) {
+    return (this.getElement() == ((Card) other).getElement() && this.getLevel() == ((Card) other).getLevel());
   }
 
+  @Override
   public String toString() {
     String life = String.format("%.3f", this.life);
     String maxLife = String.format("%.3f", this.maxLife);

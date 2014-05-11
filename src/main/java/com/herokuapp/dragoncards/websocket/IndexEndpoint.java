@@ -1,5 +1,6 @@
 package com.herokuapp.dragoncards.websocket;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +24,7 @@ import com.herokuapp.dragoncards.encoders.DrawMessageEncoder;
 import com.herokuapp.dragoncards.encoders.DuelRequestAnsweredMessageEncoder;
 import com.herokuapp.dragoncards.encoders.DuelRequestedMessageEncoder;
 import com.herokuapp.dragoncards.encoders.GameoverMessageEncoder;
+import com.herokuapp.dragoncards.encoders.LobbyMessageEncoder;
 import com.herokuapp.dragoncards.encoders.MovePlayerToLobbyMessageEncoder;
 import com.herokuapp.dragoncards.encoders.MovePlayerToRoomMessageEncoder;
 import com.herokuapp.dragoncards.encoders.OpponentBattleActionsMessageEncoder;
@@ -57,6 +59,7 @@ import com.herokuapp.dragoncards.messages.server.DrawMessage;
 import com.herokuapp.dragoncards.messages.server.DuelRequestAnsweredMessage;
 import com.herokuapp.dragoncards.messages.server.DuelRequestedMessage;
 import com.herokuapp.dragoncards.messages.server.GameoverMessage;
+import com.herokuapp.dragoncards.messages.server.LobbyMessage;
 import com.herokuapp.dragoncards.messages.server.MovePlayerToLobbyMessage;
 import com.herokuapp.dragoncards.messages.server.MovePlayerToRoomMessage;
 import com.herokuapp.dragoncards.messages.server.OpponentBattleActionsMessage;
@@ -68,6 +71,7 @@ import com.herokuapp.dragoncards.messages.server.QueryBattleActionsMessage;
 import com.herokuapp.dragoncards.messages.server.QueryDiscardActionMessage;
 import com.herokuapp.dragoncards.messages.server.QueryPlayerNameMessage;
 import com.herokuapp.dragoncards.messages.server.QueryPreliminaryActionMessage;
+import com.herokuapp.dragoncards.messages.server.UpdateLobbyMessage;
 
 @ServerEndpoint(
     value = "/index",
@@ -77,6 +81,7 @@ import com.herokuapp.dragoncards.messages.server.QueryPreliminaryActionMessage;
         DuelRequestAnsweredMessageEncoder.class,
         DuelRequestedMessageEncoder.class,
         GameoverMessageEncoder.class,
+        LobbyMessageEncoder.class,
         MovePlayerToLobbyMessageEncoder.class,
         MovePlayerToRoomMessageEncoder.class,
         OpponentBattleActionsMessageEncoder.class,
@@ -153,8 +158,36 @@ public class IndexEndpoint {
     return session.getAsyncRemote().sendObject(message);
   }
 
+  /**
+   * Emits a message to all clients.
+   * 
+   * @param message
+   */
+  private static void emitMessage(Object message) {
+    for (Session session : sessions.values()) {
+      sendMessage(session, message);
+    }
+  }
+
+  /**
+   * Determines if a room exists.
+   * 
+   * @param uuid
+   * @return
+   */
   private static boolean roomExists(String uuid) {
     return uuid != null && rooms.containsKey(uuid);
+  }
+
+  /**
+   * Alert all clients of changes to the lobby.
+   * 
+   * @param playersJoined
+   * @param playersLeft
+   */
+  private static void alertUpdateLobby(List<Player> playersJoined,
+      List<Player> playersLeft) {
+    emitMessage(new UpdateLobbyMessage(playersJoined, playersLeft));
   }
 
   /**
@@ -191,8 +224,18 @@ public class IndexEndpoint {
     // Add the client's player to the lobby.
     lobby.addPlayer(player);
 
+    // Alert all other clients of the joined player.
+    List<Player> playersJoined = new ArrayList<>(1);
+    playersJoined.add(player);
+    alertUpdateLobby(playersJoined, new ArrayList<Player>());
+
+    // Instruct the client that he may now move into the lobby.
+    // (If you didn't do this he would have received the previous lobby delta
+    // and done something with it, which would be bad.)
+    sendMessage(session, new MovePlayerToLobbyMessage());
+
     // Alert the client of the players currently in the lobby.
-    sendMessage(session, new MovePlayerToLobbyMessage(lobby.getPlayerList()));
+    sendMessage(session, new LobbyMessage(lobby.getPlayerList()));
   }
 
   /**
@@ -384,7 +427,7 @@ public class IndexEndpoint {
     sendMessage(session, new QueryBattleActionsMessage());
   }
 
-  private static void issueGameover(Player winner, Session... sessions) {
+  private static void alertGameover(Player winner, Session... sessions) {
     GameoverMessage gameoverMessage = new GameoverMessage(winner);
     for (Session session : sessions) {
       sendMessage(session, gameoverMessage);
@@ -437,11 +480,16 @@ public class IndexEndpoint {
         Card card = game.receiveCollectAction((CollectAction) action);
         sendMessage(session, new DrawMessage(card));
         sendMessage(opponentSession, new OpponentDrawMessage());
+        // TODO: Check for a deckout.
       } else if (action.equals(CollectAction.PILFER)) {
-        // TODO: Check that there is actually a card to pilfer. If not, deny.
         ActionTarget actionTarget = message.getTarget();
         int playerIndex =
             game.actionTargetToPlayerIndex(actionTarget, player);
+        // Deny if the target discard pile doesn't have a card to pilfer
+        // (malicious).
+        if (game.getDiscardPile(playerIndex).isEmpty()) {
+          return;
+        }
         game.receiveCollectAction((CollectAction) action, playerIndex);
         sendMessage(opponentSession, new OpponentPilferMessage(actionTarget));
       }
@@ -451,7 +499,10 @@ public class IndexEndpoint {
 
     } else if (action instanceof SummonAction) {
       if (action.equals(SummonAction.SUMMON)) {
-        // TODO: Check that summoning conditions are correct. If not, deny.
+        // Deny if the player cannot summon (malicious).
+        if (!game.canSummon()) {
+          return;
+        }
         game.receiveSummonAction();
         sendMessage(opponentSession,
             new OpponentSummonMessage(game.getDragons(player)));
@@ -459,7 +510,7 @@ public class IndexEndpoint {
         game.obligatorySummon();
         int winner = game.getWinner();
         if (winner >= 0) {
-          issueGameover(game.getPlayerByIndex(winner), session, opponentSession);
+          alertGameover(game.getPlayerByIndex(winner), session, opponentSession);
         } else if (winner == -1) {
           sendMessage(session,
               new OpponentSummonMessage(game.getDragons(opponent)));
@@ -558,9 +609,9 @@ public class IndexEndpoint {
 
     int winner = game.getWinner();
     if (game.getWinner() >= 0) {
-      issueGameover(game.getPlayerByIndex(winner), session, opponentSession);
+      alertGameover(game.getPlayerByIndex(winner), session, opponentSession);
     } else if (game.getWinner() == -2) {
-      issueGameover(null, session, opponentSession);
+      alertGameover(null, session, opponentSession);
     } else if (winner == -1) {
       queryBattleActions(session);
       queryBattleActions(opponentSession);
@@ -657,12 +708,19 @@ public class IndexEndpoint {
    */
   private static void cleanUpSession(Session session) {
     Player player = getPlayer(session);
+
+    // Remove the player from these collections first so that messages aren't
+    // erroneously sent to him.
+    players.remove(player.getUuid());
+    sessions.remove(player.getUuid());
+
     cleanUpDuelRequests(player);
     if (lobby.hasPlayer(player)) {
       lobby.removePlayer(player);
+      List<Player> playersLeft = new ArrayList<>(1);
+      playersLeft.add(player);
+      alertUpdateLobby(new ArrayList<Player>(), playersLeft);
     }
-    players.remove(player.getUuid());
-    sessions.remove(player.getUuid());
   }
 
   @OnClose

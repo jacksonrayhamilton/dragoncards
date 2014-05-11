@@ -9,25 +9,14 @@
 <body>
   <h2>The Dragons have Woken!</h2>
 
-  <select id="toServerSelect">
-    <option value="setPlayerName">setPlayerName</option>
-    <option value="requestDuel">requestDuel</option>
-    <option value="answerDuelRequest">answerDuelRequest</option>
-    <option value="preliminaryAction">preliminaryAction</option>
-    <option value="discardAction">discardAction</option>
-    <option value="battleActions">battleActions</option>
-    <option value="exitRoom">exitRoom</option>
-  </select>
-  <input id="jsonInput" type="text">
-  <button id="submitButton">Submit</button>
-
-  <p id="lastMessage"></p>
+  <div id="lastMessage"></div>
 
   <table class="testingTable">
     <tr>
       <th>Set Name</th>
       <th>Draw</th>
       <th>Pilfer</th>
+      <th>Summon</th>
     </tr>
     <tr>
       <td>
@@ -40,6 +29,9 @@
         <button id="pilferButton">Pilfer</button><br>
         <input type="radio" name="pilfer" value="self" checked>Self</input>
         <input type="radio" name="pilfer" value="opponent">Opponent</input>
+      </td>
+      <td>
+        <button id="summonButton">Summon</button>
       </td>
     </tr>
   </table>
@@ -61,7 +53,7 @@
       <td>
         <ul id="duelRequestsList"></ul>
       </td>
-      <td>
+      <td class="yourHandTd">
         <ul id="yourHandList"></ul>
       </td>
       <td>
@@ -74,6 +66,7 @@
   </table>
 
   <script src="js/lib/jquery.js"></script>
+  <script src="js/lib/jquery-color.js"></script>
   <script src="js/lib/lodash.js"></script>
   <script src="js/lib/chance.js"></script>
   <script src="js/lib/moment.js"></script>

@@ -270,7 +270,7 @@ public class Game implements JsonSerializable {
         continue;
       }
 
-      int count = 0;
+      int count = 1;
       for (int j = i + 1; j < size; j++) {
         Card otherCard = hand.get(j);
         if (card.equals(otherCard)) {

@@ -3,12 +3,10 @@
 
 $(function() {
 
-  var WEBSOCKET_URL = 'ws://' + location.host + '/index';
-  var ws;
+  // CONSTANTS
+  // ---------
 
-  var player;
-  var playerIndex;
-  var state;
+  var WEBSOCKET_URL = 'ws://' + location.host + '/index';
 
   var State = {
     IN_LIMBO: 1,
@@ -26,7 +24,39 @@ $(function() {
     FIRE: 'FIRE',
     EARTH: 'EARTH',
     METAL: 'METAL',
-    WATER: 'WATER'
+    WATER: 'WATER',
+    getDominated: function (element) {
+      switch (element) {
+        case 'WOOD':
+          return 'EARTH';
+        case 'FIRE':
+          return 'METAL';
+        case 'EARTH':
+          return 'WATER';
+        case 'METAL':
+          return 'WOOD';
+        case 'WATER':
+          return 'FIRE';
+        default:
+          return null;
+      }
+    },
+    getWeakness: function (element) {
+      switch (element) {
+        case 'WOOD':
+          return 'METAL';
+        case 'FIRE':
+          return 'WATER';
+        case 'EARTH':
+          return 'WOOD';
+        case 'METAL':
+          return 'FIRE';
+        case 'WATER':
+          return 'EARTH';
+        default:
+          return null;
+      }
+    }
   };
 
   var Symbols = {
@@ -37,6 +67,15 @@ $(function() {
     WATER: '水'
   };
 
+  // INSTANCE VARIABLES
+  // ------------------
+
+  var ws = null;
+
+  var player = null;
+  var playerIndex = 0;
+  var state = State.IN_LIMBO;
+
   var lobby = {
     players: []
   };
@@ -44,18 +83,21 @@ $(function() {
   var duelRequests = [];
   var pendingDuelRequests = [];
 
-  var room;
-  var game;
-  var yourHand;
-  var opponentHand;
-  var yourDiscardPile;
-  var opponentDiscardPile;
+  var room = null;
+  var game = null;
+  var yourHand = null;
+  var opponentHand = null;
+  var yourDiscardPile = null;
+  var opponentDiscardPile = null;
 
-  var yourDragons;
-  var opponentDragons;
-  var yourBattleActions;
-  var opponentBattleActions;
-  var lastOutcome;
+  var yourDragons = null;
+  var opponentDragons = null;
+  var yourBattleActions = null;
+  var opponentBattleActions = null;
+  var lastOutcome = '';
+
+  // DOM
+  // ---
 
   var lastMessage = $('#lastMessage');
   var lastAlert = $('#lastAlert');
@@ -76,7 +118,7 @@ $(function() {
   var yourDragonsList = $('#yourDragonsList');
   var opponentDragonsList = $('#opponentDragonsList');
   var battleButton = $('#battleButton');
-  var outcomeTd = $('#outcomeTd');
+  var outcomeList = $('#outcomeList');
 
   // TEMPLATES
   // ---------
@@ -93,13 +135,26 @@ $(function() {
     };
   }());
 
-  var dragonTemplate = _.template(
-    '<span class="dragon <%- element %>">'
-      + '<%- symbol %><%- level %><br>'
-      + '<%- life %>/<%- maxLife %><br>'
-      + 'Power: <%- power %><br>'
-      + 'Boost: <%- boost %>'
-      + '</span>');
+  var dragonTemplate = (function () {
+    var template = _.template(
+      '<span class="element <%- element %>">'
+        + '<%- symbol %><%- level %>'
+        + '</span><br>'
+        + '<b><%- life %></b>/<b><%- maxLife %></b><br>'
+        + 'Power: <b><%- power %></b><br>'
+        + 'Boost: <b><%- boost %></b>');
+    return function (dragon) {
+      return template({
+        element: dragon.element.toLowerCase(),
+        symbol: Symbols[dragon.element],
+        level: dragon.level,
+        life: dragon.life.toFixed(2),
+        maxLife: dragon.maxLife.toFixed(2),
+        power: dragon.power.toFixed(2),
+        boost: dragon.boost.toFixed(2)
+      });
+    };
+  }());
 
   // MESSAGING
   // ---------
@@ -263,7 +318,8 @@ $(function() {
   function updateLobbyView() {
     lobbyList.empty();
     lobby.players.forEach(function (player) {
-      var listItem = $(_.template('<li><a href="#"><%- name %></a></li>', player));
+      var listItem = $(_.template(
+        '<li><a href="#"><%- name %></a></li>', player));
       listItem.on('click', function (e) {
         e.preventDefault();
         if (_.find(pendingDuelRequests, {uuid: player.uuid})) {
@@ -305,8 +361,9 @@ $(function() {
   function updateDuelRequestsView() {
     duelRequestsList.empty();
     duelRequests.forEach(function (duelRequest) {
-      var listItem = $(_.template('<li><a href="#">From: <%- name %></a></li>',
-                                  duelRequest.requester));
+      var listItem = $(_.template(
+        '<li><a href="#">From: <%- name %></a></li>',
+        duelRequest.requester));
       listItem.on('click', function (e) {
         e.preventDefault();
         sendMessage({
@@ -452,7 +509,7 @@ $(function() {
   }
 
   /**
-   * Determines the player has 2 sets (and therefore can summon).
+   * Determines if the player has 2 sets (and therefore can summon).
    */
   function canSummon() {
     var sets = 0;
@@ -480,19 +537,21 @@ $(function() {
 
   function addYourDragons(dragons) {
     yourDragons = dragons;
+    updateDragonsView('your');
   }
 
   function addOpponentDragons(dragons) {
     opponentDragons = dragons;
+    updateDragonsView('opponent');
   }
 
-  function updateDragonsView(whichDragons) {
+  function updateDragonsView(whose) {
     var dragons;
     var list;
-    if (whichDragons === 'your') {
+    if (whose === 'your') {
       dragons = yourDragons;
       list = yourDragonsList;
-    } else if (whichDragons === 'opponent') {
+    } else if (whose === 'opponent') {
       dragons = opponentDragons;
       list = opponentDragonsList;
     }
@@ -501,6 +560,12 @@ $(function() {
     dragons.forEach(function (dragon) {
       var listItem = $('<li>' + dragonTemplate(dragon) + '</li>');
       list.append(listItem);
+    });
+  }
+
+  function updateDragonsViews() {
+    ['your', 'opponent'].forEach(function (whose) {
+      updateDragonsView(whose);
     });
   }
 
@@ -513,29 +578,149 @@ $(function() {
     battle();
   }
 
-  function getSwitches(whose) {
-    var actions;
+  function getDragons(whose) {
+    var dragons;
     if (whose === 'your') {
-      actions = yourBattleActions;
+      dragons = yourDragons;
     } else if (whose === 'opponent') {
-      actions = opponentBattleActions;
+      dragons = opponentDragons;
     }
-    var count;
-    actions.forEach(function (action) {
-      if (action.type === 'SWITCH') {
-        count++;
-      }
+    return dragons;
+  }
+
+  function switchDragons(whose) {
+    var dragons = getDragons(whose);
+    dragons.unshift(dragons.pop());
+  }
+
+  function getDamageMultiplier(attackingElement, defendingElement) {
+    var multiplier;
+    if (Element.getDominated(attackingElement) === defendingElement) {
+      multiplier = 2;
+    } else if (Element.getWeakness(attackingElement) === defendingElement) {
+      multiplier = 0.5;
+    } else {
+      multiplier = 1;
+    }
+    return multiplier;
+  }
+
+  function attackWithDragon(whose, attackerIndex, targetIndex) {
+    var attacker = getDragons(whose)[attackerIndex];
+    var other = whose === 'your' ? 'opponent' : 'your';
+    var target = getDragons(other)[targetIndex];
+    var damage;
+    var multiplier;
+    if (target.countering) {
+      damage = target.power * target.boost;
+      multiplier = getDamageMultiplier(target.element, attacker.element);
+      attacker.life -= damage * multiplier;
+    } else {
+      damage = attacker.power * attacker.boost;
+      multiplier = getDamageMultiplier(attacker.element, target.element);
+      target.life -= damage * multiplier;
+    }
+  }
+
+  function counterWithDragon(whose, index) {
+    var dragons = getDragons(whose);
+    dragons[index].countering = true;
+  }
+
+  function battleCleanup() {
+    yourDragons.concat(opponentDragons).forEach(function (dragon) {
+      dragon.countering = false;
     });
-    return count;
+    yourBattleActions = null;
+    opponentBattleActions = null;
+  }
+
+  function getWhose(index) {
+    var whose;
+    if (index === playerIndex) {
+      whose = 'your';
+    } else {
+      whose = 'opponent';
+    }
+    return whose;
+  }
+
+  function getOtherWhose(whose) {
+    return whose === 'your' ? 'opponent' : 'your';
+  }
+
+  function toTitleCase(str) {
+    return str.replace(/\w\S*/g, function (txt) {
+      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+  }
+
+  function getOutcome(action) {
+    var whose = getWhose(action.player);
+    var dragons = getDragons(whose);
+    var initiator = dragons[action.initiator];
+
+    if (action.type === 'ATTACK') {
+      var other = getOtherWhose(whose);
+      var otherDragons = getDragons(other);
+      var target = otherDragons[action.target];
+    }
+
+    if (action.type === 'ATTACK') {
+      return toTitleCase(whose) + ' ' + cardTemplate(initiator) + ' attacks ' + cardTemplate(target) + '.';
+    } else if (action.type === 'SWITCH') {
+      return toTitleCase(whose) + ' ' + cardTemplate(initiator) + ' switches places with its partner.';
+    } else if (action.type === 'COUNTER') {
+      return toTitleCase(whose) + ' ' + cardTemplate(initiator) + ' prepares to counter incoming blows.';
+    }
+    return '';
   }
 
   function battle() {
+    var battleActions = [];
+    battleActions = battleActions.concat(yourBattleActions);
+    battleActions = battleActions.concat(opponentBattleActions);
 
+    // TODO: Figure out this null problem.
+    console.log(battleActions, yourBattleActions, opponentBattleActions);
+
+    var sortedActions = [];
+    battleActions.forEach(function (action) {
+      if (action.type === 'SWITCH' ||
+          action.type === 'COUNTER') {
+        sortedActions.unshift(action);
+      } else {
+        sortedActions.push(action);
+      }
+    });
+
+    lastOutcome = '';
+    sortedActions.forEach(function (action) {
+      var whose;
+      if (action.player === playerIndex) {
+        whose = 'your';
+      } else {
+        whose = 'opponent';
+      }
+      if (action.type === 'ATTACK') {
+        attackWithDragon(whose, action.initiator, action.target);
+      } else if (action.type === 'SWITCH') {
+        switchDragons(whose);
+      } else if (action.type === 'COUNTER') {
+        counterWithDragon(whose, action.initiator);
+      }
+      lastOutcome += '<li>' + getOutcome(action) + '</li><br>';
+    });
+
+    updateDragonsViews();
+    updateOutcomeView();
+
+    battleCleanup();
   }
 
   function updateOutcomeView() {
-    outcomeTd.empty();
-    outcomeTd.html(lastOutcome);
+    outcomeList.empty();
+    outcomeList.html(lastOutcome);
   }
 
   function gameover(data) {
@@ -615,16 +800,18 @@ $(function() {
     }
     var actions = [
       {
-        type: $('input:radio[name="dragon0Type"]:checked').val(),
+        type: $('input:radio[name="dragon0Type"]:checked').val()
+          .toUpperCase(),
         player: playerIndex,
         initiator: 0,
-        target: $('input:radio[name="dragon0Target"]:checked').val()
+        target: parseInt($('input:radio[name="dragon0Target"]:checked').val())
       },
       {
-        type: $('input:radio[name="dragon1Type"]:checked').val(),
+        type: $('input:radio[name="dragon1Type"]:checked').val()
+          .toUpperCase(),
         player: playerIndex,
         initiator: 1,
-        target: $('input:radio[name="dragon1Target"]:checked').val()
+        target: parseInt($('input:radio[name="dragon1Target"]:checked').val())
       }
     ];
     addYourBattleActions(actions);

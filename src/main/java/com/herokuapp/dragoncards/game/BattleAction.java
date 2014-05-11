@@ -53,6 +53,7 @@ public class BattleAction implements JsonSerializable {
   public JsonValue toJson() {
     return Json.createObjectBuilder()
         .add("type", this.type)
+        .add("player", this.player)
         .add("initiator", this.initiator)
         .add("target", this.target)
         .build();

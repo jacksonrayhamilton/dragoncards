@@ -37,6 +37,7 @@ import com.herokuapp.dragoncards.encoders.QueryBattleActionsMessageEncoder;
 import com.herokuapp.dragoncards.encoders.QueryDiscardActionMessageEncoder;
 import com.herokuapp.dragoncards.encoders.QueryPlayerNameMessageEncoder;
 import com.herokuapp.dragoncards.encoders.QueryPreliminaryActionMessageEncoder;
+import com.herokuapp.dragoncards.encoders.SummonMessageEncoder;
 import com.herokuapp.dragoncards.encoders.UpdateLobbyMessageEncoder;
 import com.herokuapp.dragoncards.game.ActionTarget;
 import com.herokuapp.dragoncards.game.BattleAction;
@@ -71,6 +72,7 @@ import com.herokuapp.dragoncards.messages.server.QueryBattleActionsMessage;
 import com.herokuapp.dragoncards.messages.server.QueryDiscardActionMessage;
 import com.herokuapp.dragoncards.messages.server.QueryPlayerNameMessage;
 import com.herokuapp.dragoncards.messages.server.QueryPreliminaryActionMessage;
+import com.herokuapp.dragoncards.messages.server.SummonMessage;
 import com.herokuapp.dragoncards.messages.server.UpdateLobbyMessage;
 
 @ServerEndpoint(
@@ -94,6 +96,7 @@ import com.herokuapp.dragoncards.messages.server.UpdateLobbyMessage;
         QueryDiscardActionMessageEncoder.class,
         QueryPlayerNameMessageEncoder.class,
         QueryPreliminaryActionMessageEncoder.class,
+        SummonMessageEncoder.class,
         UpdateLobbyMessageEncoder.class
     },
     decoders = {
@@ -504,6 +507,8 @@ public class IndexEndpoint {
           return;
         }
         game.receiveSummonAction();
+        // Alert the summoner and the opponent what the summoner summoned.
+        sendMessage(session, new SummonMessage(game.getDragons(player)));
         sendMessage(opponentSession,
             new OpponentSummonMessage(game.getDragons(player)));
         game.nextTurn();
@@ -512,6 +517,10 @@ public class IndexEndpoint {
         if (winner >= 0) {
           alertGameover(game.getPlayerByIndex(winner), session, opponentSession);
         } else if (winner == -1) {
+          // Alert both the player who obligatorily summoned and his opponent
+          // of what was obligatorily summoned.
+          sendMessage(opponentSession,
+              new SummonMessage(game.getDragons(opponent)));
           sendMessage(session,
               new OpponentSummonMessage(game.getDragons(opponent)));
           game.beginBattle();
@@ -585,6 +594,12 @@ public class IndexEndpoint {
 
     Room room = rooms.get(roomUuid);
     Game game = room.getGame();
+
+    // Deny if the player is not who he says he is (malicious).
+    if (game.getPlayerIndex(player) != message.getActions().get(0).getPlayer()) {
+      return;
+    }
+
     Player opponent = room.getNonTurnPlayer();
     Session opponentSession = sessions.get(opponent.getUuid());
 

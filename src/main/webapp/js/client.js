@@ -6,6 +6,8 @@ $(function() {
   var WEBSOCKET_URL = 'ws://' + location.host + '/index';
   var ws;
 
+  var player;
+  var playerIndex;
   var state;
 
   var State = {
@@ -27,11 +29,20 @@ $(function() {
     WATER: 'WATER'
   };
 
+  var Symbols = {
+    WOOD: '木',
+    FIRE: '火',
+    EARTH: '地',
+    METAL: '金',
+    WATER: '水'
+  };
+
   var lobby = {
     players: []
   };
 
   var duelRequests = [];
+  var pendingDuelRequests = [];
 
   var room;
   var game;
@@ -40,10 +51,18 @@ $(function() {
   var yourDiscardPile;
   var opponentDiscardPile;
 
+  var yourDragons;
+  var opponentDragons;
+  var yourBattleActions;
+  var opponentBattleActions;
+  var lastOutcome;
+
   var lastMessage = $('#lastMessage');
+  var lastAlert = $('#lastAlert');
 
   var setPlayerNameInput = $('#setPlayerNameInput');
   var setPlayerNameButton = $('#setPlayerNameButton');
+  var deckSpan = $('#deckSpan');
   var drawButton = $('#drawButton');
   var pilferButton = $('#pilferButton');
   var summonButton = $('#summonButton');
@@ -54,27 +73,33 @@ $(function() {
   var yourDiscardPileList = $('#yourDiscardPileList');
   var opponentDiscardPileList = $('#opponentDiscardPileList');
 
+  var yourDragonsList = $('#yourDragonsList');
+  var opponentDragonsList = $('#opponentDragonsList');
+  var battleButton = $('#battleButton');
+  var outcomeTd = $('#outcomeTd');
+
   // TEMPLATES
   // ---------
 
   var cardTemplate = (function() {
     var template = _.template('<span class="element <%- element %>"><%- symbol %><%- level %></span>');
-    var symbols = {
-      WOOD: '木',
-      FIRE: '火',
-      EARTH: '地',
-      METAL: '金',
-      WATER: '水'
-    };
     return function (card) {
       var data = {
         element: card.element.toLowerCase(),
-        symbol: symbols[card.element],
+        symbol: Symbols[card.element],
         level: card.level
       };
       return template(data);
     };
   }());
+
+  var dragonTemplate = _.template(
+    '<span class="dragon <%- element %>">'
+      + '<%- symbol %><%- level %><br>'
+      + '<%- life %>/<%- maxLife %><br>'
+      + 'Power: <%- power %><br>'
+      + 'Boost: <%- boost %>'
+      + '</span>');
 
   // MESSAGING
   // ---------
@@ -95,6 +120,30 @@ $(function() {
     console.error('Connection error! See the logs for more info.');
   }
 
+  function setMessage(message) {
+    lastMessage.empty();
+    lastMessage.html(_.template('<b><%- time %>:</b> <%- message %>', {
+      time: moment().format('hh:mm:ss A'),
+      message: message
+    }));
+    lastMessage
+      .stop()
+      .css("background-color", "#FFFF9C")
+      .animate({backgroundColor: "#FFFFFF"}, 1500);
+  }
+
+  function setAlert(message) {
+    lastAlert.empty();
+    lastAlert.html(_.template('<b><%- time %>:</b> <%- message %>', {
+      time: moment().format('hh:mm:ss A'),
+      message: message
+    }));
+    lastAlert
+      .stop()
+      .css("background-color", "#FF9C9C")
+      .animate({backgroundColor: "#FFFFFF"}, 1500);
+  }
+
   /**
    * Handles incoming messages.
    */
@@ -102,19 +151,13 @@ $(function() {
     var data = JSON.parse(e.data);
     console.log(data);
 
-    lastMessage.empty();
-    lastMessage.html(_.template('<b><%- time %>:</b> <%- message %>', {
-      time: moment().format('hh:mm:ss A'),
-      message: data.toClient
-    }));
-    lastMessage
-      .stop()
-      .css("background-color", "#FFFF9C")
-      .animate({backgroundColor: "#FFFFFF"}, 1500);
+    setMessage(data.toClient);
 
     var type = data.toClient;
     if (type === 'queryPlayerName') {
       state = State.NAMING;
+    } else if (type === 'createPlayer') {
+      createPlayer(data);
     } else if (type === 'movePlayerToLobby') {
       movePlayerToLobby();
     } else if (type === 'lobby') {
@@ -127,6 +170,8 @@ $(function() {
       }
     } else if (type === 'duelRequested') {
       addDuelRequest(data.duelRequest);
+    } else if (type === 'duelRequestAnswered') {
+      resolvePendingDuelRequest(data.duelRequest);
     } else if (type === 'movePlayerToRoom') {
       initializeGame(data);
     } else if (type === 'queryPreliminaryAction') {
@@ -138,7 +183,7 @@ $(function() {
     } else if (type === 'draw') {
       drawCard(data.card);
     } else if (type === 'opponentDraw') {
-      // TODO: Implement.
+      opponentDrawCard();
     } else if (type === 'opponentPilfer') {
       if (data.target === 'SELF') {
         pilferCardToOpponentHand('opponent');
@@ -147,6 +192,18 @@ $(function() {
       }
     } else if (type === 'opponentDiscard') {
       discardOpponentCard(data.card);
+    } else if (type === 'summon') {
+      addYourDragons(data.dragons);
+    } else if (type === 'opponentSummon') {
+      addOpponentDragons(data.dragons);
+    } else if (type === 'queryBattleActions') {
+      state = State.CHOOSING_BATTLE_ACTIONS;
+    } else if (type === 'opponentBattleActions') {
+      addOpponentBattleActions(data.actions);
+    } else if (type === 'gameover') {
+      gameover(data);
+    } else if (type === 'opponentDisconnect') {
+      opponentDisconnect();
     }
   }
 
@@ -172,6 +229,13 @@ $(function() {
 
   // GAME
   // ----
+
+  function createPlayer(data) {
+    player = {
+      name: data.name,
+      uuid: data.uuid
+    };
+  }
 
   function movePlayerToLobby() {
     state = State.IN_LOBBY;
@@ -202,10 +266,14 @@ $(function() {
       var listItem = $(_.template('<li><a href="#"><%- name %></a></li>', player));
       listItem.on('click', function (e) {
         e.preventDefault();
+        if (_.find(pendingDuelRequests, {uuid: player.uuid})) {
+          return;
+        }
         sendMessage({
           toServer: 'requestDuel',
           uuid: player.uuid
         });
+        pendingDuelRequests.push(player);
       });
       lobbyList.append(listItem);
     });
@@ -219,6 +287,19 @@ $(function() {
   function removeDuelRequest(duelRequest) {
     _.remove(duelRequests, {uuid: duelRequest.uuid});
     updateDuelRequestsView();
+  }
+
+  function removePendingDuelRequest(duelRequest) {
+    _.remove(pendingDuelRequests, {uuid: duelRequest.requestee.uuid});
+  }
+
+  function resolvePendingDuelRequest(duelRequest) {
+    removePendingDuelRequest(duelRequest);
+    if (duelRequest.accept) {
+      // TODO: Alert accepted.
+    } else {
+      // TODO: Alert rejected.
+    }
   }
 
   function updateDuelRequestsView() {
@@ -237,6 +318,11 @@ $(function() {
       });
       duelRequestsList.append(listItem);
     });
+  }
+
+  function updateDeckView() {
+    deckSpan.empty();
+    deckSpan.text(game.deck.size);
   }
 
   function updateYourHandView() {
@@ -295,14 +381,25 @@ $(function() {
     yourDiscardPile = [];
     opponentDiscardPile = [];
 
+    updateDeckView();
     updateYourHandView();
     updateYourDiscardPileView();
     updateOpponentDiscardPileView();
+
+    // NTS: NEVER use indexes. EVER again.
+    playerIndex = _.findIndex(game.players, {uuid: player.uuid});
   }
 
   function drawCard(card) {
     yourHand.push(card);
+    game.deck.size--;
     updateYourHandView();
+    updateDeckView();
+  }
+
+  function opponentDrawCard() {
+    game.deck.size--;
+    updateDeckView();
   }
 
   function discardYourCard(card) {
@@ -381,6 +478,79 @@ $(function() {
     return sets === 2;
   }
 
+  function addYourDragons(dragons) {
+    yourDragons = dragons;
+  }
+
+  function addOpponentDragons(dragons) {
+    opponentDragons = dragons;
+  }
+
+  function updateDragonsView(whichDragons) {
+    var dragons;
+    var list;
+    if (whichDragons === 'your') {
+      dragons = yourDragons;
+      list = yourDragonsList;
+    } else if (whichDragons === 'opponent') {
+      dragons = opponentDragons;
+      list = opponentDragonsList;
+    }
+
+    list.empty();
+    dragons.forEach(function (dragon) {
+      var listItem = $('<li>' + dragonTemplate(dragon) + '</li>');
+      list.append(listItem);
+    });
+  }
+
+  function addYourBattleActions(actions) {
+    yourBattleActions = actions;
+  }
+
+  function addOpponentBattleActions(actions) {
+    opponentBattleActions = actions;
+    battle();
+  }
+
+  function getSwitches(whose) {
+    var actions;
+    if (whose === 'your') {
+      actions = yourBattleActions;
+    } else if (whose === 'opponent') {
+      actions = opponentBattleActions;
+    }
+    var count;
+    actions.forEach(function (action) {
+      if (action.type === 'SWITCH') {
+        count++;
+      }
+    });
+    return count;
+  }
+
+  function battle() {
+
+  }
+
+  function updateOutcomeView() {
+    outcomeTd.empty();
+    outcomeTd.html(lastOutcome);
+  }
+
+  function gameover(data) {
+    if (data.winner) {
+      setAlert('Game over! The winner is ' + data.winner.name + '!');
+    } else if (data.draw) {
+      setAlert('A draw!');
+    }
+  }
+
+  function opponentDisconnect() {
+    setAlert('Opponent disconnected.');
+    state = State.IN_LOBBY;
+  }
+
   // EVENT LISTENERS
   // ---------------
 
@@ -437,6 +607,32 @@ $(function() {
       toServer: 'preliminaryAction',
       action: 'summon'
     });
+  });
+
+  battleButton.on('click', function () {
+    if (state != State.CHOOSING_BATTLE_ACTIONS) {
+      return;
+    }
+    var actions = [
+      {
+        type: $('input:radio[name="dragon0Type"]:checked').val(),
+        player: playerIndex,
+        initiator: 0,
+        target: $('input:radio[name="dragon0Target"]:checked').val()
+      },
+      {
+        type: $('input:radio[name="dragon1Type"]:checked').val(),
+        player: playerIndex,
+        initiator: 1,
+        target: $('input:radio[name="dragon1Target"]:checked').val()
+      }
+    ];
+    addYourBattleActions(actions);
+    sendMessage({
+      toServer: 'battleActions',
+      actions: actions
+    });
+    state = State.WAITING_FOR_OPPONENT;
   });
 
   // INITIALIZATION

@@ -257,3 +257,39 @@
 {
   "toClient": "opponentDisconnect"
 }
+
+
+// This one is just a little bonus for the client.
+// This is what an outcome object looks like:
+// DEPRECATED because the gains of implementing this are far too small
+// to justify it.
+
+{
+  "your": {
+    "dragon0": {
+      "dragon": {} // this dragon
+      "type": "attacked",
+      "result": {
+        "hit": true,
+        "countered": false,
+        "hitWhom": {} // dragon who got hit
+      }
+    },
+    "dragon1": {
+      "type": "countered",
+      "result": {
+        "counteredHit": false,
+        "counteredWhom": {} // dragon whose attack was countered
+      }
+    }
+  },
+  "opponent": {
+    "dragon0": {
+      "type": "swap",
+      "result": {
+        "swappedTo": 0 // or 1, whichever index
+      }
+    },
+    "dragon1": {}
+  }
+}

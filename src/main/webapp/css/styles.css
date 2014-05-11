@@ -2,10 +2,11 @@ body {
     padding: 5px;
 }
 
-#lastMessage {
+#lastMessage,
+#lastAlert {
     display: inline-block;
-    margin: 1em 0;
-    padding: 10px;
+    margin: .5em 0;
+    padding: 5px;
     border-radius: 3px;
 }
 
@@ -14,11 +15,14 @@ table th {
     padding: 5px;
 }
 
+.testingTable {
+    margin-bottom: 1em;
+}
+
 .testingTable,
 .testingTable td,
 .testingTable th {
     border: 1px solid #000;
-    text-align: center;
 }
 
 .testingTable ul {
@@ -27,8 +31,33 @@ table th {
     padding: 0;
 }
 
+#actionTable td,
+#listTable td {
+    text-align: center;
+    vertical-align: top;
+}
+
+#listTable {
+    width: 100%;
+}
+
+#listTable td {
+    width: 33%;
+}
+
+/*#yourHandList li,
+#yourDiscardPileList li,
+#opponentDiscardPileList li {
+    display: inline;
+    margin: 0 .5em;
+}*/
+
 .yourHandTd a {
     text-decoration: none;
+}
+
+#deckSpan {
+    font-weight: bold;
 }
 
 .element {

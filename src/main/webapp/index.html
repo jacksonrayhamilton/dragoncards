@@ -7,44 +7,21 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <h2>The Dragons have Woken!</h2>
-
   <div id="lastMessage"></div>
+  <div id="lastAlert"></div>
 
-  <table class="testingTable">
-    <tr>
-      <th>Set Name</th>
-      <th>Draw</th>
-      <th>Pilfer</th>
-      <th>Summon</th>
-    </tr>
+  <table id="setNameTable" class="testingTable">
     <tr>
       <td>
-        <input type="text" id="setPlayerNameInput" value="a"> <button id="setPlayerNameButton">Submit</button>
-      </td>
-      <td>
-        <button id="drawButton">Draw</button>
-      </td>
-      <td>
-        <button id="pilferButton">Pilfer</button><br>
-        <input type="radio" name="pilfer" value="self" checked>Self</input>
-        <input type="radio" name="pilfer" value="opponent">Opponent</input>
-      </td>
-      <td>
-        <button id="summonButton">Summon</button>
+        <input type="text" id="setPlayerNameInput" value="a"> <button id="setPlayerNameButton">Set Name!</button>
       </td>
     </tr>
   </table>
 
-  <br>
-
-  <table class="testingTable">
+  <table id="lobbyTable" class="testingTable">
     <tr>
       <th>Lobby</th>
       <th>Duel Requests</th>
-      <th>Your Hand</th>
-      <th>Your Discard Pile</th>
-      <th>Opponent's Discard Pile</th>
     </tr>
     <tr>
       <td>
@@ -53,6 +30,33 @@
       <td>
         <ul id="duelRequestsList"></ul>
       </td>
+    </tr>
+  </table>
+
+  <table id="actionTable" class="testingTable">
+    <tr>
+      <td>
+        <span id="deckSpan"></span>
+        <button id="drawButton">Draw!</button>
+      </td>
+      <td>
+        <button id="pilferButton">Pilfer!</button>
+        <input type="radio" name="pilfer" value="self" checked>Self</input>
+        <input type="radio" name="pilfer" value="opponent">Opponent</input>
+      </td>
+      <td>
+        <button id="summonButton">Summon!</button>
+      </td>
+    </tr>
+  </table>
+
+  <table id="listTable" class="testingTable">
+    <tr>
+      <th>Your Hand</th>
+      <th>Your Discard Pile</th>
+      <th>Opponent Discard Pile</th>
+    </tr>
+    <tr>
       <td class="yourHandTd">
         <ul id="yourHandList"></ul>
       </td>
@@ -61,6 +65,59 @@
       </td>
       <td>
         <ul id="opponentDiscardPileList"></ul>
+      </td>
+    </tr>
+  </table>
+
+  <table id="battleTable" class="testingTable">
+    <tr>
+      <th>Your Dragons</th>
+      <th>Opponent Dragons</th>
+    </tr>
+    <tr>
+      <td>
+        <ul id="yourDragonsList"></ul>
+      </td>
+      <td>
+        <ul id="opponentDragonsList"></ul>
+      </td>
+    </tr>
+  </table>
+
+  <table id="battleActionsTable" class="testingTable">
+    <tr>
+      <th>
+      <th>Dragon #1</th>
+      <th>Dragon #2</th>
+      <th></td>
+      <th>Outcome</th>
+    </tr>
+    <tr>
+      <th>Action</th>
+      <td>
+        <input type="radio" name="dragon0Type" value="attack" checked>Attack</input>
+        <input type="radio" name="dragon0Type" value="switch">Switch</input>
+        <input type="radio" name="dragon0Type" value="counter">Counter</input>
+      </td>
+      <td>
+        <input type="radio" name="dragon1Type" value="attack" checked>Attack</input>
+        <input type="radio" name="dragon1Type" value="switch">Switch</input>
+        <input type="radio" name="dragon1Type" value="counter">Counter</input>
+      </td>
+      <td rowspan="2">
+        <button id="battleButton">Battle!</button>
+      </td>
+      <td rowspan="2" id="outcomeTd"></td>
+    </tr>
+    <tr>
+      <th>Target</th>
+      <td>
+        <input type="radio" name="dragon0Target" value="0" checked>Slot 1</input>
+        <input type="radio" name="dragon0Target" value="1">Slot 2</input>
+      </td>
+      <td>
+        <input type="radio" name="dragon1Target" value="0" checked>Slot 1</input>
+        <input type="radio" name="dragon1Target" value="1">Slot 2</input>
       </td>
     </tr>
   </table>

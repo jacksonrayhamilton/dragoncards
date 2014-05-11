@@ -140,10 +140,10 @@ Course of Action
 - Implement headless game with testing. DONE
   - Expect certain inputs from the JSON API. DONE
 
-- Implement lobby and matchmaking server-side. Test. Mostly-done
+- Implement lobby and matchmaking server-side. Test. DONE.
 
-- Implement client side gamestate to mimmick server-side. Test.
-- Implement client-to-server messaging to get gamestate info. Async test?
+- Implement client side gamestate to mimmick server-side. Test. In progress.
+- Implement client-to-server messaging to get gamestate info. In progress.
 
 - Do decoding checking.
 

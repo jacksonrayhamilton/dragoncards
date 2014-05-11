@@ -10,8 +10,6 @@ import com.herokuapp.dragoncards.JsonSerializable;
  * 
  * @author Jackson Hamilton
  */
-// TODO: This entire class is one big wanna-be enum hack.
-// Consider breaking this into different types of actions.
 public class BattleAction implements JsonSerializable {
 
   public static final String

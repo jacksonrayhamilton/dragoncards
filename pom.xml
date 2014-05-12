@@ -8,13 +8,6 @@
 		<tomcat.version>7.0.47</tomcat.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
-	<pluginRepositories>
-    <pluginRepository>
-      <name>oss.sonatype.org</name>
-      <id>oss.sonatype.org</id>
-      <url>http://oss.sonatype.org/content/groups/public</url>
-    </pluginRepository>
-  </pluginRepositories>
 	<build>
 		<finalName>dragoncards</finalName>
 		<plugins>
@@ -56,21 +49,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-        <groupId>net.alchim31.maven</groupId>
-        <artifactId>yuicompressor-maven-plugin</artifactId>
-        <version>1.1</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>compress</goal>
-            </goals>
-          </execution>
-        </executions>        
-        <configuration>
-          <nosuffix>true</nosuffix>
-        </configuration>
-      </plugin>
 		</plugins>
 	</build>
 	<dependencies>

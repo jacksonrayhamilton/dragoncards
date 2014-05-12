@@ -1,5 +1,5 @@
 /*jslint browser: true */
-/*global $, _, chance, moment*/
+/*global $, _, chance, moment, Modernizr*/
 
 $(function() {
 
@@ -74,6 +74,8 @@ $(function() {
 
   var ws = null;
 
+  var explanationVisible = true;
+
   var player = null;
   var playerIndex = 0;
   var state = State.IN_LIMBO;
@@ -100,6 +102,9 @@ $(function() {
 
   // DOM
   // ---
+
+  var toggleExplanation = $('#toggleExplanation');
+  var explanation = $('#explanation');
 
   var lastMessage = $('#lastMessage');
   var lastAlert = $('#lastAlert');
@@ -308,6 +313,14 @@ $(function() {
   function init() {
     state = State.IN_LIMBO;
     setPlayerNameInput.val(chance.name());
+    if (Modernizr.localstorage && localStorage['explanationVisible']) {
+      var value = localStorage['explanationVisible'];
+      // Varying localStorage implementation future-proofing.
+      explanationVisible = typeof value === 'boolean' ?
+        value :
+        value === 'true';
+    }
+    updateExplanation();
     connect();
   }
 
@@ -577,18 +590,20 @@ $(function() {
   function updateDragonsView(whose) {
     var dragons;
     var list;
+    var tds;
     if (whose === 'your') {
       dragons = yourDragons;
-      list = yourDragonsList;
+      tds = [yourDragon0Td, yourDragon1Td];
     } else if (whose === 'opponent') {
       dragons = opponentDragons;
-      list = opponentDragonsList;
+      tds = [opponentDragon0Td, opponentDragon1Td];
     }
 
-    list.empty();
-    dragons.forEach(function (dragon) {
-      var listItem = $('<li>' + dragonTemplate(dragon) + '</li>');
-      list.append(listItem);
+    dragons.forEach(function (dragon, index) {
+      tds[index]
+        .empty()
+        .append(avatarTemplate(dragon.element))
+        .append('<br>' + dragonTemplate(dragon));
     });
   }
 
@@ -743,7 +758,7 @@ $(function() {
       } else if (action.type === 'COUNTER') {
         counterWithDragon(whose, action.initiator);
       }
-      lastOutcome += '<li>' + getOutcome(action) + '</li><br>';
+      lastOutcome += '<li>' + getOutcome(action) + '</li>';
     });
 
     updateDragonsViews();
@@ -771,8 +786,27 @@ $(function() {
     state = State.IN_LOBBY;
   }
 
+  function updateExplanation() {
+    if (explanationVisible) {
+      explanation.show();
+      toggleExplanation.text('[Hide Explanation]');
+    } else {
+      explanation.hide();
+      toggleExplanation.text('[Show Explanation]');
+    }
+  }
+
   // EVENT LISTENERS
   // ---------------
+
+  toggleExplanation.on('click', function (e) {
+    e.preventDefault();
+    explanationVisible = !explanationVisible;
+    if (Modernizr.localstorage) {
+      localStorage['explanationVisible'] = explanationVisible;
+    }
+    updateExplanation();
+  });
 
   setPlayerNameButton.on('click', function () {
     if (state != State.NAMING) {

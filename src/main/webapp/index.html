@@ -14,6 +14,8 @@
 
   <p>Welcome to the open beta of Dragon Cards, a free multiplayer online card game!</p>
 
+  <p><a href="#" id="toggleExplanation"></a></p>
+
   <div id="explanation">
 
     <p>How to start a game:</p>
@@ -130,19 +132,18 @@
       <th colspan="2">Opponent Dragons</th>
     </tr>
     <tr>
-      <td colspan="2">
-        <ul id="yourDragonsList"></ul>
-      </td>
-      <td colspan="2">
-        <ul id="opponentDragonsList"></ul>
-      </td>
+      <td colspan="2" id="yourDragon0Td"></td>
+      <td colspan="2" id="opponentDragon0Td"></td>
+    </tr>
+    <tr>
+      <td colspan="2" id="yourDragon1Td"></td>
+      <td colspan="2" id="opponentDragon1Td"></td>
     </tr>
     <tr>
       <th>
       <th>Dragon #1</th>
       <th>Dragon #2</th>
       <th></td>
-      <th>Outcome</th>
     </tr>
     <tr>
       <th>Action</th>
@@ -159,9 +160,6 @@
       <td rowspan="2">
         <button id="battleButton">Battle!</button>
       </td>
-      <td rowspan="2">
-        <ol id="outcomeList"></ol>
-      </td>
     </tr>
     <tr>
       <th>Target<br><small>(If Attacking)</small></th>
@@ -174,6 +172,14 @@
         <input type="radio" name="dragon1Target" value="1">Slot 2</input>
       </td>
     </tr>
+    <tr>
+      <th colspan="4">Battle Outcome</th>
+    </tr>
+    <tr>
+      <td colspan="4">
+        <ol id="outcomeList"></ol>
+      </td>
+    </tr>
   </table>
 
   <script src="js/lib/jquery.js"></script>
@@ -181,6 +187,7 @@
   <script src="js/lib/lodash.js"></script>
   <script src="js/lib/chance.js"></script>
   <script src="js/lib/moment.js"></script>
+  <script src="js/lib/modernizr.js"></script>
   <script src="js/client.js"></script>
 </body>
 </html>

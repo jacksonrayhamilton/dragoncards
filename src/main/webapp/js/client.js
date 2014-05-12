@@ -119,13 +119,17 @@ $(function() {
 
   var yourDragonsList = $('#yourDragonsList');
   var opponentDragonsList = $('#opponentDragonsList');
+  var yourDragon0Td = $('#yourDragon0Td');
+  var yourDragon1Td = $('#yourDragon1Td');
+  var opponentDragon0Td = $('#opponentDragon0Td');
+  var opponentDragon1Td = $('#opponentDragon1Td');
   var battleButton = $('#battleButton');
   var outcomeList = $('#outcomeList');
 
   // TEMPLATES
   // ---------
 
-  var cardTemplate = (function() {
+  var cardTemplate = (function () {
     var template = _.template('<span class="element <%- element %>"><%- symbol %><%- level %></span>');
     return function (card) {
       var data = {
@@ -134,6 +138,13 @@ $(function() {
         level: card.level
       };
       return template(data);
+    };
+  }());
+
+  var physicalCardTemplate = (function () {
+    var template = _.template('<div class="card"><%= card %></div>');
+    return function (card) {
+      return template({card: cardTemplate(card)});
     };
   }());
 
@@ -157,6 +168,22 @@ $(function() {
       });
     };
   }());
+
+  var avatarTemplate = function (element) {
+    var url;
+    if (element === Element.WOOD) {
+      url = 'img/avatars/wood-dragon.png';
+    } else if (element === Element.FIRE) {
+      url = 'img/avatars/sun-dragon.png';
+    } else if (element === Element.EARTH) {
+      url = 'img/avatars/earth-dragon.png';
+    } else if (element === Element.METAL) {
+      url = 'img/avatars/metal-dragon.png';
+    } else if (element === Element.WATER) {
+      url = 'img/avatars/blue-dragon.png';
+    }
+    return '<img src="' + url + '" alt="' + toTitleCase(element) + ' dragon avatar.">';
+  };
 
   // MESSAGING
   // ---------
@@ -228,7 +255,7 @@ $(function() {
     } else if (type === 'duelRequested') {
       addDuelRequest(data.duelRequest);
     } else if (type === 'duelRequestAnswered') {
-      resolvePendingDuelRequest(data.duelRequest);
+      resolvePendingDuelRequest(data);
     } else if (type === 'movePlayerToRoom') {
       initializeGame(data);
     } else if (type === 'queryPreliminaryAction') {
@@ -351,12 +378,12 @@ $(function() {
     _.remove(pendingDuelRequests, {uuid: duelRequest.requestee.uuid});
   }
 
-  function resolvePendingDuelRequest(duelRequest) {
-    removePendingDuelRequest(duelRequest);
-    if (duelRequest.accept) {
-      // TODO: Alert accepted.
+  function resolvePendingDuelRequest(data) {
+    removePendingDuelRequest(data.duelRequest);
+    if (data.accept) {
+      setAlert('Requestee "' + data.duelRequest.requestee.name + '" accepted your duel request!');
     } else {
-      // TODO: Alert rejected.
+      setAlert('Requestee "' + data.duelRequest.requestee.name + '" rejected your duel request.');
     }
   }
 
@@ -387,8 +414,8 @@ $(function() {
   function updateYourHandView() {
     yourHandList.empty();
     yourHand.forEach(function (card) {
-      var listItem = $('<li><a href="#">' + cardTemplate(card) + '</a></li>');
-      listItem.on('click', function (e) {
+      var cardItem = $('<a href="#">' + physicalCardTemplate(card) + '</a>');
+      cardItem.on('click', function (e) {
         e.preventDefault();
         if (state != State.CHOOSING_DISCARD_ACTION) {
           return;
@@ -401,7 +428,7 @@ $(function() {
         discardYourCard(card);
         state = State.WAITING_FOR_OPPONENT;
       });
-      yourHandList.append(listItem);
+      yourHandList.append(cardItem);
     });
   }
 
@@ -679,7 +706,7 @@ $(function() {
     if (action.type === 'ATTACK') {
       return toTitleCase(whose) + ' ' + cardTemplate(initiator) + ' attacks ' + getOtherWhose(whose) + ' ' + cardTemplate(target) + '.';
     } else if (action.type === 'SWITCH') {
-      return toTitleCase(whose) + ' ' + cardTemplate(initiator) + ' switches places with your other dragon.';
+      return toTitleCase(whose) + ' ' + cardTemplate(initiator) + ' switches places with ally dragon.';
     } else if (action.type === 'COUNTER') {
       return toTitleCase(whose) + ' ' + cardTemplate(initiator) + ' prepares to counter oncoming blows.';
     }

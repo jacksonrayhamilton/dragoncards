@@ -610,15 +610,25 @@ public class IndexEndpoint {
     }
 
     List<BattleAction> actions = game.getBattleActions();
+    List<BattleAction> playerActions = new ArrayList<>(2);
+    List<BattleAction> opponentActions = new ArrayList<>(2);
+    int playerIndex = game.getPlayerIndex(player);
+    for (BattleAction action : actions) {
+      if (action.getPlayer() == playerIndex) {
+        playerActions.add(action);
+      } else {
+        opponentActions.add(action);
+      }
+    }
 
     // The first 2 actions were made by the current submitter's opponent.
     sendMessage(session,
-        new OpponentBattleActionsMessage(actions.subList(0, 2)));
+        new OpponentBattleActionsMessage(opponentActions));
 
     // The rest of the actions, just made in this method invokation, were
     // made by the submitter and must be relayed to his opponent.
     sendMessage(opponentSession,
-        new OpponentBattleActionsMessage(actions.subList(2, 4)));
+        new OpponentBattleActionsMessage(playerActions));
 
     game.battle();
 
@@ -751,6 +761,7 @@ public class IndexEndpoint {
     logger.log(Level.INFO,
         String.format("Connection error with client `%s'.", getUuid(session)));
     logger.log(Level.INFO, throwable.toString());
+    throwable.printStackTrace(System.err);
   }
 
 }

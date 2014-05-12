@@ -12,18 +12,54 @@
   <h1>Dragon Cards!</h1>
   <h2>The Dragons have Woken!</h2>
 
-  <p>Welcome to the open beta of Dragon Cards. How to play:</p>
+  <p>Welcome to the open beta of Dragon Cards, a free multiplayer online card game!</p>
 
-  <ul>
-    <li>Enter your name below and join.</li>
-    <li>Request a duel with someone in the lobby.</li>
-    <li>Take turns playing with your opponent. On your turn, either draw from the deck, pilfer the last card in either player's discrad pile, or summon your dragons. After drawing or pilfering you must discard a card so that you have 6 cards again.</li>
-    <li>Collect 2 sets of Dragon Cards. A set is 3 copies of the same element and level. The element is the Japanese symbol (木 (wood), 火 (fire), 地 (earth), 金 (metal) and 水 (water)) and the level a number 1-5 next to it. You can only summon your dragons once you have 2 sets.</li>
-    <li>After summoning, the battle begins. Choose to attack, switch, or counter. Once your opponent has decided as well the results of that battle will be shown. Continue until one player wins.</li>
-  </ul>
+  <div id="explanation">
 
-  <div id="lastMessage"></div><br>
-  <div id="lastAlert"></div>
+    <p>How to start a game:</p>
+
+    <ul>
+      <li>Enter your name.</li>
+      <li>Request a duel with someone in the lobby.</li>
+      <li>If they accept, the duel will begin.</li>
+    </ul>
+
+    <p>How to play:</p>
+
+    <ul>
+      <li>Collect 2 sets of Dragon Cards, summon those dragons, and defeat your opponent's.</li>
+      <li>First, you and your opponent take turns. On your turn, you may:
+        <ul>
+          <li><b>Draw:</b> Draw from the deck and discard.</li>
+          <li><b>Pilfer:</b> Take the top card from either discard pile and discard.</li>
+          <li><b>Summon:</b> If you have 2 sets of Dragon Cards (a set is 3 cards of the same element and level) you may summon those dragons. Your opponent then draws until he has a set, and his dragons are summoned too.</li>
+        </ul>
+      </li>
+      <li>After summoning, the battle begins. Submit your attacks and wait for your opponent's; the results of the last battle will be shown; like a Pokemon battle. You may:
+        <ul>
+          <li><b>Attack:</b> Attack the opponent dragon in either the 1st or 2nd spot.</li>
+          <li><b>Switch:</b> Switch spots with your other dragon.</li>
+          <li><b>Counter:</b> If you are attacked, the attack is negated, and you retaliate against the attacker.</li>
+        </ul>
+      </li>
+      <li>Continue submitting attacks until all of your opponent's dragons are dead.</li>
+    </ul>
+
+    <p>Strategy:</p>
+
+    <ul>
+      <li>There are 5 elements: <span class="wood">木 (Wood)</span>, <span class="fire">火 (Fire)</span>, <span class="earth">地 (Earth)</span>, <span class="metal">金 (Metal)</span>, and <span class="water">水 (Water)</span>.</li>
+      <li>Wood beats Earth, Fire beats Metal, Earth beats Water, Metal beats Wood, and Water beats Fire.</li>
+      <li>Levels range from 1 to 5. 1 is the weakest, 5 is the strongest. Strength increases logarithmically.</li>
+      <li>Pay attention to the elements your opponent is collecting so you can counter them.</li>
+      <li>Try to predict your opponent's moves so you can switch and counter accordingly.</li>
+      <li>Have fun.</li>
+    </ul>
+
+  </div>
+
+  <div id="lastAlert"></div><br>
+  <div id="lastMessage"></div>
 
   <table id="setNameTable" class="testingTable">
     <tr>
@@ -67,14 +103,18 @@
 
   <table id="listTable" class="testingTable">
     <tr>
-      <th>Your Hand</th>
+      <th colspan="2">Your Hand</th>
+    </tr>
+    <tr>
+      <td colspan="2" class="yourHandTd">
+        <ul id="yourHandList"></ul>
+      </td>
+    </tr>
+    <tr>
       <th>Your Discard Pile</th>
       <th>Opponent Discard Pile</th>
     </tr>
     <tr>
-      <td class="yourHandTd">
-        <ul id="yourHandList"></ul>
-      </td>
       <td>
         <ul id="yourDiscardPileList"></ul>
       </td>
@@ -86,20 +126,17 @@
 
   <table id="battleTable" class="testingTable">
     <tr>
-      <th>Your Dragons</th>
-      <th>Opponent Dragons</th>
+      <th colspan="2">Your Dragons</th>
+      <th colspan="2">Opponent Dragons</th>
     </tr>
     <tr>
-      <td>
+      <td colspan="2">
         <ul id="yourDragonsList"></ul>
       </td>
-      <td>
+      <td colspan="2">
         <ul id="opponentDragonsList"></ul>
       </td>
     </tr>
-  </table>
-
-  <table id="battleActionsTable" class="testingTable">
     <tr>
       <th>
       <th>Dragon #1</th>

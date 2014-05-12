@@ -472,11 +472,11 @@ public class IndexEndpoint {
       return;
     }
 
-    Player opponent = room.getNonTurnPlayer();
-    Session opponentSession = sessions.get(opponent.getUuid());
-
     PreliminaryAction action = message.getAction();
     Game game = room.getGame();
+
+    Player opponent = game.getOpponent(player);
+    Session opponentSession = sessions.get(opponent.getUuid());
 
     if (action instanceof CollectAction) {
       if (action.equals(CollectAction.DRAW)) {
@@ -561,7 +561,7 @@ public class IndexEndpoint {
 
     Card card = game.receiveDiscardAction(element, level);
 
-    Player opponent = room.getNonTurnPlayer();
+    Player opponent = game.getOpponent(player);
     Session opponentSession = sessions.get(opponent.getUuid());
 
     // Alert the opponent of the card that the turn player dicarded.
@@ -600,7 +600,7 @@ public class IndexEndpoint {
       return;
     }
 
-    Player opponent = room.getNonTurnPlayer();
+    Player opponent = game.getOpponent(player);
     Session opponentSession = sessions.get(opponent.getUuid());
 
     game.addBattleActions(message.getActions());
@@ -623,9 +623,9 @@ public class IndexEndpoint {
     game.battle();
 
     int winner = game.getWinner();
-    if (game.getWinner() >= 0) {
+    if (winner >= 0) {
       alertGameover(game.getPlayerByIndex(winner), session, opponentSession);
-    } else if (game.getWinner() == -2) {
+    } else if (winner == -2) {
       alertGameover(null, session, opponentSession);
     } else if (winner == -1) {
       queryBattleActions(session);

@@ -190,6 +190,34 @@ public class Game implements JsonSerializable {
     return this.turnPlayer == 0 ? 1 : 0;
   }
 
+  public int getLivingDragonCount() {
+    int count = 0;
+    List<Dragon> allDragons = new ArrayList<>(4);
+    allDragons.addAll(this.getDragons(0));
+    allDragons.addAll(this.getDragons(1));
+    for (Dragon dragon : allDragons) {
+      if (!dragon.isDead()) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Gets the opponent of the opposed player.
+   * 
+   * @param opposed
+   * @return
+   */
+  public Player getOpponent(Player opposed) {
+    for (Player player : this.players) {
+      if (!player.equals(opposed)) {
+        return player;
+      }
+    }
+    return null; // Should never return this.
+  }
+
   /**
    * Determines which player is the winner using special codes.
    * 
@@ -398,7 +426,7 @@ public class Game implements JsonSerializable {
   }
 
   public boolean isReadyToBattle() {
-    return this.battleActions.size() >= this.playerCount * DRAGONS_PER_PLAYER;
+    return this.battleActions.size() >= this.getLivingDragonCount();
   }
 
   public void battle() {

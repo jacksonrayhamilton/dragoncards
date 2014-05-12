@@ -3,10 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <title>Dragon Cards!</title>
+  <meta name="description" content="Command Japanese elemental dragons in the free MMO online card game Dragon Cards! Play now!">
+  <meta name="viewport" content="width=device-width">
   <link rel="stylesheet" href="css/lib/normalize.css">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <h1>Dragon Cards!</h1>
+  <h2>The Dragons have Woken!</h2>
+
+  <p>Welcome to the open beta of Dragon Cards. How to play:</p>
+
+  <ul>
+    <li>Enter your name below and join.</li>
+    <li>Request a duel with someone in the lobby.</li>
+    <li>Take turns playing with your opponent. On your turn, either draw from the deck, pilfer the last card in either player's discrad pile, or summon your dragons. After drawing or pilfering you must discard a card so that you have 6 cards again.</li>
+    <li>Collect 2 sets of Dragon Cards. A set is 3 copies of the same element and level. The element is the Japanese symbol (木 (wood), 火 (fire), 地 (earth), 金 (metal) and 水 (water)) and the level a number 1-5 next to it. You can only summon your dragons once you have 2 sets.</li>
+    <li>After summoning, the battle begins. Choose to attack, switch, or counter. Once your opponent has decided as well the results of that battle will be shown. Continue until one player wins.</li>
+  </ul>
+
   <div id="lastMessage"></div><br>
   <div id="lastAlert"></div>
 
@@ -112,7 +127,7 @@
       </td>
     </tr>
     <tr>
-      <th>Target</th>
+      <th>Target<br><small>(If Attacking)</small></th>
       <td>
         <input type="radio" name="dragon0Target" value="0" checked>Slot 1</input>
         <input type="radio" name="dragon0Target" value="1">Slot 2</input>

@@ -3,6 +3,8 @@
 
 $(function() {
 
+  'use strict';
+
   // CONSTANTS
   // ---------
 
@@ -148,7 +150,7 @@ $(function() {
         element: dragon.element.toLowerCase(),
         symbol: Symbols[dragon.element],
         level: dragon.level,
-        life: dragon.life.toFixed(2),
+        life: Math.max(dragon.life, 0).toFixed(2),
         maxLife: dragon.maxLife.toFixed(2),
         power: dragon.power.toFixed(2),
         boost: dragon.boost.toFixed(2)
@@ -658,7 +660,15 @@ $(function() {
   function getOutcome(action) {
     var whose = getWhose(action.player);
     var dragons = getDragons(whose);
-    var initiator = dragons[action.initiator];
+
+    var initiator;
+    if (action.type === 'SWITCH') {
+      // If a switch occurred then the initiator is now in the other spot.
+      // This coincidentally still works if they both switch.
+      initiator = dragons[action.initiator === 0 ? 1 : 0];
+    } else {
+      initiator = dragons[action.initiator];
+    }
 
     if (action.type === 'ATTACK') {
       var other = getOtherWhose(whose);
@@ -667,11 +677,11 @@ $(function() {
     }
 
     if (action.type === 'ATTACK') {
-      return toTitleCase(whose) + ' ' + cardTemplate(initiator) + ' attacks ' + cardTemplate(target) + '.';
+      return toTitleCase(whose) + ' ' + cardTemplate(initiator) + ' attacks ' + getOtherWhose(whose) + ' ' + cardTemplate(target) + '.';
     } else if (action.type === 'SWITCH') {
-      return toTitleCase(whose) + ' ' + cardTemplate(initiator) + ' switches places with its partner.';
+      return toTitleCase(whose) + ' ' + cardTemplate(initiator) + ' switches places with your other dragon.';
     } else if (action.type === 'COUNTER') {
-      return toTitleCase(whose) + ' ' + cardTemplate(initiator) + ' prepares to counter incoming blows.';
+      return toTitleCase(whose) + ' ' + cardTemplate(initiator) + ' prepares to counter oncoming blows.';
     }
     return '';
   }
@@ -680,9 +690,6 @@ $(function() {
     var battleActions = [];
     battleActions = battleActions.concat(yourBattleActions);
     battleActions = battleActions.concat(opponentBattleActions);
-
-    // TODO: Figure out this null problem.
-    console.log(battleActions, yourBattleActions, opponentBattleActions);
 
     var sortedActions = [];
     battleActions.forEach(function (action) {
@@ -729,6 +736,7 @@ $(function() {
     } else if (data.draw) {
       setAlert('A draw!');
     }
+    state = State.IN_LOBBY;
   }
 
   function opponentDisconnect() {
@@ -798,22 +806,21 @@ $(function() {
     if (state != State.CHOOSING_BATTLE_ACTIONS) {
       return;
     }
-    var actions = [
-      {
-        type: $('input:radio[name="dragon0Type"]:checked').val()
-          .toUpperCase(),
-        player: playerIndex,
-        initiator: 0,
-        target: parseInt($('input:radio[name="dragon0Target"]:checked').val())
-      },
-      {
-        type: $('input:radio[name="dragon1Type"]:checked').val()
-          .toUpperCase(),
-        player: playerIndex,
-        initiator: 1,
-        target: parseInt($('input:radio[name="dragon1Target"]:checked').val())
+    var actions = [];
+    yourDragons.forEach(function (dragon, index) {
+      if (dragon.life > 0) {
+        actions.push({
+          type: $('input:radio[name="dragon' + index + 'Type"]:checked')
+            .val()
+            .toUpperCase(),
+          player: playerIndex,
+          initiator: index,
+          target: parseInt(
+            $('input:radio[name="dragon' + index + 'Target"]:checked')
+              .val())
+        });
       }
-    ];
+    });
     addYourBattleActions(actions);
     sendMessage({
       toServer: 'battleActions',

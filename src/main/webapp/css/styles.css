@@ -60,15 +60,13 @@ table th {
     font-weight: bold;
 }
 
-.element,
-.dragon {
-    vertical-align: middle;
+.element {
     font-weight: bold;
     font-size: 1.5em;
 }
 
 .wood {
-    color: brown;
+    color: sienna;
 }
 
 .fire {

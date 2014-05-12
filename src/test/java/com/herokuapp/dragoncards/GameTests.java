@@ -28,7 +28,7 @@ public class GameTests {
   public void setUp() {
     this.a = new Player("A", State.DUELING);
     this.b = new Player("B", State.DUELING);
-    this.game = new Game(a, b);
+    this.game = new Game(this.a, this.b);
   }
 
   @Test
@@ -177,6 +177,8 @@ public class GameTests {
   @Test
   public void Battling_Attacking_PlayerWins() {
     this.setupForBattling();
+
+    assertEquals(4, this.game.getLivingDragonCount());
 
     int count = 0;
     while (this.game.getWinner() == -1 && count++ < 1000) {
